@@ -71,6 +71,11 @@ final class FakeUbusNode: @unchecked Sendable {
     var s1gDownInterface: String?
     /// Nothing listens on these ports: a connection is refused.
     var closedPorts: Set<Int> = []
+    /// The HaLow access point's station joined in 4-address mode: it's on this interface (`wlan1.sta1`), and the
+    /// access point's own list is empty.
+    var wdsStationInterface: String?
+    /// Every ubus call answered, as "object.method".
+    private(set) var methodCalls: [String] = []
 
     /// Heltec's firmware as it ships (2.8.5, Morse Micro's OpenWrt 23.05, theme morseargon): no openmanetd; the login
     /// page names a "MM HaLow Device"; the morse radio's settings say s1g; here a station (the factory pair's
@@ -152,6 +157,10 @@ final class FakeUbusNode: @unchecked Sendable {
             return result(0, ["ubus_rpc_session": token, "timeout": 300, "expires": 300, "acls": [:], "data": [:]])
         }
         guard sessions.contains(session) else { return error(-32002) }
+        methodCalls.append("\(object ?? "").\(method ?? "")")
+        if object == "iwinfo", method == "assoclist", let wds = wdsStationInterface, args["device"] as? String == wds {
+            return result(0, ["results": [haLowPeer].compactMap { $0 }.map(\.json)])
+        }
         let radio = radios.first { $0.device == args["device"] as? String }
         func iwinfo(_ radio: (device: String, freqHz: Int?, hwmodes: [String], mode: String, bssid: String)) -> [String: Any] {
             var info: [String: Any] = ["channel": 0, "noise": -95, "mode": radio.mode, "hwmodes": radio.hwmodes,
@@ -170,7 +179,8 @@ final class FakeUbusNode: @unchecked Sendable {
         case ("iwinfo", "assoclist"):
             guard let radio else { return result(4) }
             let haLow = radio.hwmodes.contains("ah") || s1gDevices.contains(radio.device)
-            let stations = haLow || radio.mode != "Master" ? [haLowPeer].compactMap { $0 } : [apClient]
+            let wdsMoved = haLow && radio.mode == "Master" && wdsStationInterface != nil
+            let stations = wdsMoved ? [] : haLow || radio.mode != "Master" ? [haLowPeer].compactMap { $0 } : [apClient]
             if let mac = args["mac"] as? String {  // one station, or NOT_FOUND
                 guard let station = stations.first(where: { $0.mac.lowercased() == mac.lowercased() }) else { return result(4) }
                 return result(0, station.json)
@@ -191,6 +201,10 @@ final class FakeUbusNode: @unchecked Sendable {
                 ]
             }
             return result(0, devices)
+        case ("luci-rpc", "getNetworkDevices"):
+            guard hasLuCI else { return error(-32000) }
+            let names = radios.map(\.device) + [wdsStationInterface, "br-lan", "eth0"].compactMap { $0 }
+            return result(0, Dictionary(uniqueKeysWithValues: names.map { ($0, ["name": $0, "up": true] as [String: Any]) }))
         case ("luci-rpc", "getDHCPLeases"):
             guard hasLuCI else { return error(-32000) }
             if denyLuciRpc { return error(-32002) }
@@ -652,6 +666,24 @@ struct HaLowDiscoveryTests {
         await monitor.findNodes()
         let found = await node(monitor, "192.168.100.1")
         #expect(found?.state == .polling && found?.stats?.signalDBm == -65)
+    }
+
+    @Test("A bridged station on the access point's 4-address interface: the link is read there, not as down")
+    func heltecStockBridgedAccessPoint() async {
+        let (monitor, transport, _) = mesh([], visible: [], gateway: "192.168.100.1", localAddresses: ["192.168.100.120"])
+        let accessPoint = FakeUbusNode.heltecStock(hostname: "HT-HD01-9958")
+        accessPoint.radios = [("wlan0", 2_437_000, ["b", "g", "n"], "Master", "E4:38:19:00:00:0A"),
+                              ("wlan1", nil, ["ah"], "Master", "0C:BF:74:00:00:0A")]
+        accessPoint.wdsStationInterface = "wlan1.sta1"
+        transport.nodes["192.168.100.1"] = accessPoint
+        await monitor.findNodes()
+        #expect(await node(monitor, "192.168.100.1")?.stats?.signalDBm == -65, "found on wlan1.sta1")
+        await monitor.pollNow()
+        #expect(await node(monitor, "192.168.100.1")?.stats?.signalDBm == -65)
+        #expect(accessPoint.methodCalls.filter { $0 == "luci-rpc.getNetworkDevices" }.count == 1,
+                "listed once; the next poll reads wlan1.sta1 in its own batch")
+        #expect(accessPoint.methodCalls.filter { $0 == "iwinfo.assoclist" }.count == 4,
+                "first poll: wlan1, then wlan1.sta1; second: both in one batch")
     }
 
     @Test("An rpcd host that isn't a HaLow node (no OpenMANET, a plain LuCI login page) never gets the password")

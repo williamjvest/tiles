@@ -226,6 +226,13 @@ public actor HaLowMonitor {
         var mac: String?
         /// The node's Wi-Fi access points, where this device may be a station.
         var accessPoints: [String]
+        /// The HaLow interface is an access point. A station that joins it in 4-address mode (bridged, as Heltec's
+        /// wizard sets one up, with `wds`) is moved to an interface of its own, `<device>.sta<N>`, and the access
+        /// point's own station list no longer has it.
+        var isAccessPoint = false
+        /// Those interfaces, as `getNetworkDevices` last listed them, and when.
+        var stationInterfaces: [String] = []
+        var stationInterfacesRead: Date?
     }
 
     private var found: [String: Found] = [:]
@@ -592,7 +599,8 @@ public actor HaLowMonitor {
     private func readStats(_ address: String, password: String) async throws -> HaLowNodeStats {
         if radios[address] == nil { try await discover(address, password: password) }
         guard let radio = radios[address] else { throw HaLowError.notHaLow }
-        var calls = [UbusCall("iwinfo", "assoclist", ["device": radio.device])]
+        let haLowInterfaces = [radio.device] + radio.stationInterfaces
+        var calls = haLowInterfaces.map { UbusCall("iwinfo", "assoclist", ["device": $0]) }
         let readsLeases = leasesDue.remove(address) != nil
         if readsLeases { calls.append(UbusCall("luci-rpc", "getDHCPLeases", ["family": 4])) }
         let stationChecks = calls.count
@@ -602,11 +610,28 @@ public actor HaLowMonitor {
         }
         let replies = try await call(address, password: password, calls)
         if replies[0].accessDenied { throw HaLowError.accessDenied }
-        guard replies[0].code == 0, let stations = replies[0].object?["results"] as? [[String: Any]] else {
+        guard replies[0].code == 0, var stations = replies[0].object?["results"] as? [[String: Any]] else {
             radios[address] = nil  // the interface went away (radio restarted, renamed): find it again next poll
             throw HaLowError.notHaLow
         }
-        if readsLeases { noteLeases(replies[1].object?["dhcp_leases"] as? [[String: Any]], on: address) }
+        var stationInterfaceGone = false
+        for reply in replies[1..<haLowInterfaces.count] {
+            if reply.code == 0, let more = reply.object?["results"] as? [[String: Any]] { stations += more } else { stationInterfaceGone = true }
+        }
+        // An access point with no station in sight may have them on 4-address interfaces: list those again, every
+        // 30 s while nothing's found (or one went), else every 5 min in case another joined that way.
+        let listAge = radio.stationInterfacesRead.map { Date().timeIntervalSince($0) } ?? .infinity
+        if radio.isAccessPoint, listAge >= (stations.isEmpty || stationInterfaceGone ? 30 : 300) {
+            let listed = try await stationInterfaces(address, password: password, of: radio.device)
+            radios[address]?.stationInterfaces = listed
+            radios[address]?.stationInterfacesRead = Date()
+            let unread = listed.filter { !radio.stationInterfaces.contains($0) }
+            if !unread.isEmpty {
+                let more = try await call(address, password: password, unread.map { UbusCall("iwinfo", "assoclist", ["device": $0]) })
+                for reply in more where reply.code == 0 { stations += reply.object?["results"] as? [[String: Any]] ?? [] }
+            }
+        }
+        if readsLeases { noteLeases(replies[haLowInterfaces.count].object?["dhcp_leases"] as? [[String: Any]], on: address) }
         if calls.count > stationChecks {
             // With a `mac`, rpcd answers that one station, or UBUS_STATUS_NOT_FOUND when it isn't associated.
             if replies[stationChecks...].contains(where: { $0.code == 0 }) { attached.insert(address) } else { attached.remove(address) }
@@ -653,6 +678,14 @@ public actor HaLowMonitor {
         radios[address] = radio
     }
 
+    /// The access point's 4-address station interfaces (`wlan1.sta1`…): `luci-rpc getNetworkDevices` is keyed by
+    /// interface name, and is in LuCI's stock ACLs.
+    private func stationInterfaces(_ address: String, password: String, of device: String) async throws -> [String] {
+        let replies = try await call(address, password: password, [UbusCall("luci-rpc", "getNetworkDevices")])
+        guard replies[0].code == 0, let devices = replies[0].object else { return [] }
+        return devices.keys.filter { $0.hasPrefix("\(device).sta") }.sorted()
+    }
+
     private func noteLeases(_ leases: [[String: Any]]?, on address: String) {
         guard let leases else { return }
         let mine = localAddresses()
@@ -677,7 +710,9 @@ public actor HaLowMonitor {
                     // A mesh point's or AP's BSSID is its own MAC; a station's is its AP's, shared, so not an identity.
                     let own = ["Mesh Point", "Master"].contains(iwinfo?["mode"] as? String ?? "")
                     haLow = Radio(device: name, mac: own ? (iwinfo?["bssid"] as? String)?.lowercased() : nil,
-                                  accessPoints: [])
+                                  accessPoints: [],
+                                  isAccessPoint: iwinfo?["mode"] as? String == "Master"
+                                    || (interface["config"] as? [String: Any])?["mode"] as? String == "ap")
                 } else if (interface["config"] as? [String: Any])?["mode"] as? String == "ap"
                             || iwinfo?["mode"] as? String == "Master" {
                     accessPoints.append(name)

@@ -109,6 +109,15 @@ with an RJ45 port, a USB-C port that carries Ethernet and power (a Mac or iPad n
 Wi-Fi of its own. A camera goes on one node's Ethernet, the iPad on another node's USB-C or Wi-Fi, and the mesh
 carries the rest.
 
+**Setting up nodes from Heltec.** A pair comes from Heltec set up to carry a router's internet to devices at the far
+end: the station gives the devices plugged into it addresses of its own (10.42.0.x) behind its own router, so an iPad
+at the access point's end can't reach a camera on the station. On the station's settings page (`10.42.0.1`, user
+`root`, password `heltec.org`), set its **Traffic Mode** to **Bridge**, as in Heltec's
+[AP-STA setup guide](https://wiki.heltec.org/docs/devices/wifi-halow/ht-hd01/ap). The camera on the station then gets
+its address from the access point ([Heltec's IP allocation rules](https://wiki.heltec.org/docs/devices/wifi-halow/ht-hd01/ip_rules)):
+join the iPad to the access point's Wi-Fi (`HT-HD01-` and four characters, password `heltec.org`), or, with the
+access point in Ethernet-Bridge mode as well, to the router it's plugged into.
+
 Tiles needs nothing from the nodes but a network, and installs nothing on them. With the nodes' admin password in
 Settings → HaLow Nodes (`heltec.org` on a node as Heltec ships it), it can also show the link it controls cameras
 through, its signal, rate and retries, in the top bar. It only reads ([`docs/halow-monitoring.md`](docs/halow-monitoring.md) has which nodes and how).

@@ -174,11 +174,24 @@ four V2s as they came from Heltec (two factory pairs), 2026-11-19:
   10.42.0.1/24 with DHCP from .100, on its Ethernet, USB-C and its own 2.4 GHz AP.
 - umdns advertises uhttpd (`_http._tcp`) on `lan` and `ahwlan` (all four units' config), so on the access point's
   Wi-Fi Bonjour finds both nodes of the pair; on the station's LAN, the station (it's the gateway there too).
+- For camera control that matters more than the readout: the factory station masquerades its LAN onto the HaLow side
+  (zone `ahwlan`, `masq '1'`, forwarding only `lan` → `ahwlan`), so nothing on the access point's side can open a
+  connection to a camera on the station's Ethernet. Heltec's own pages say the same in their terms: the default pair
+  is "Upstream Router → Dongle-AP → Dongle-STA → Terminal Devices", and in the station's default mode its devices get
+  10.42.0.x ([IP allocation rules](https://wiki.heltec.org/docs/devices/wifi-halow/ht-hd01/ip_rules)). In the
+  station's **Bridge** mode they get their addresses from the access point (192.168.100.x in its factory Ethernet-Router
+  mode), or from the upstream router with the access point in Ethernet-Bridge mode too. The wizard's Bridged traffic
+  mode puts the station's Ethernet and Wi-Fi on `ahwlan` and sets `wds '1'` on its HaLow station. The README's setup
+  note follows that; not yet run with Tiles on a stock pair.
 
-Not checked yet: a node running it. The first stock node to hand gets `camctl halow` with
-`CAMCTL_NODE_PASSWORD=heltec.org`, from its LAN and from the other node's Wi-Fi. Also open there: whether an access
-point with `wds '1'` lists a station that joins in 4-address mode on its own interface or on a `wlan1.staN` one (the
-factory station doesn't use WDS).
+A station that joins an access point in 4-address mode (the wizard's Bridged traffic mode sets `wds '1'` on it, and
+the factory access point already has it) is moved by mac80211 to an interface of its own, `<HaLow interface>.sta<N>`,
+and the access point's own station list loses it. So on a HaLow access point the monitor also lists those
+interfaces (`luci-rpc getNetworkDevices`: every 30 s while its own list is empty, else every 5 min) and reads them in
+the same batch as the rest; without that, the node the iPad is on would read as link down with the link up.
+
+Not checked yet: a node running it. The first stock pair to hand gets `camctl halow` with
+`CAMCTL_NODE_PASSWORD=heltec.org`, as it ships and again with the station set to Bridged, from each end.
 
 ## Field check: `camctl halow`
 
