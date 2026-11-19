@@ -1,0 +1,10 @@
+# gitleaks reads this from the repository root. What it would flag here is made for the tests and protects nothing:
+# the fake camera's self-signed identity (CN=fake-bm-camera; see that folder's README) and the Control API's
+# demo token in examples.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test fixtures and documented example values"
+paths = ['''Packages/CameraKit/Tests/BlackmagicRESTTests/Fixtures/''']
+regexes = ['''demo-token''']
