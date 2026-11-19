@@ -133,6 +133,22 @@ struct PlaybackTile: View {
         return b
     }
 
+    /// What VoiceOver says for a button. The symbols' own names were wrong here ("Go To End" for the previous clip,
+    /// "Go Backward" for play and pause) or missing ("gobackward.5").
+    private static func spoken(_ button: PlaybackButton) -> String {
+        switch button.command {
+        case .previous: "Previous Clip"
+        case .next: "Next Clip"
+        case .rewind: "Rewind"
+        case .fastForward: "Fast Forward"
+        case .skip(let seconds): "\(seconds < 0 ? "Back" : "Forward") \(Int(abs(seconds))) Seconds"
+        case .togglePlay: button.id == "pause.fill" ? "Pause" : button.id == "play.fill" ? "Play" : "Play or Pause"
+        case .stop: "Stop"
+        case .recReview: "Rec Review"
+        default: button.id
+        }
+    }
+
     /// The buttons the camera has, dropping the least essential first when the tile is too narrow for all of them
     /// (a quarter-width phone tile still gets previous, play and next) rather than clipping them at the edge.
     @ViewBuilder
@@ -153,9 +169,12 @@ struct PlaybackTile: View {
                                        scale: scale, send: send)
                         } else if button.command == .recReview {
                             // Rec Review plays the last take from the live picture, so it's live's, not review's.
-                            pbButton(button.id, enabled: active && pb?.inReview != true, scale: scale) { send(button.command) }
+                            pbButton(button.id, spoken: Self.spoken(button), enabled: active && pb?.inReview != true,
+                                     scale: scale) { send(button.command) }
                         } else {
-                            pbButton(button.id, enabled: transport, scale: scale) { send(button.command) }
+                            pbButton(button.id, spoken: Self.spoken(button), enabled: transport, scale: scale) {
+                                send(button.command)
+                            }
                         }
                     }
                     if caps.review { modeSwitch(pb: pb, active: active, scale: scale, text: text).padding(.leading, 4 * text) }
@@ -172,7 +191,8 @@ struct PlaybackTile: View {
 
     // MARK: - Helpers
 
-    private func pbButton(_ systemImage: String, enabled: Bool, scale: CGFloat, action: @escaping () -> Void) -> some View {
+    private func pbButton(_ systemImage: String, spoken: String, enabled: Bool, scale: CGFloat,
+                          action: @escaping () -> Void) -> some View {
         // 36 pt targets at least: these get hit with a thumb, on a phone, on set.
         Button(action: action) {
             Image(systemName: systemImage)
@@ -182,6 +202,7 @@ struct PlaybackTile: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(spoken)
         .disabled(!enabled)
     }
 

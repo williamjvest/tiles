@@ -309,6 +309,9 @@ struct Tile<Content: View>: View {
             }
         }
         .coordinateSpace(name: CaptionFrames.space)
+        // One group per tile, so VoiceOver reads a tile through before the next. Without it, a row of tiles was read
+        // captions first ("FPS, CODEC"), then the values.
+        .accessibilityElement(children: .contain)
         .onPreferenceChange(CaptionFrames.self) { frames in
             guard let audit else { return }
             MainActor.assumeIsolated { AlignmentAudit.record(audit, frames) }
@@ -343,6 +346,8 @@ struct MiniSegmented<Value: Hashable>: View {
     /// Segment height when the tile can't give the standard 30pt (a squeezed iPhone row): never outgrow the tile.
     /// In standard points, like every size given to a tile's controls: the control scales it (`tileScale`).
     var segmentHeight: CGFloat? = nil
+    /// What VoiceOver says for a segment, where `label` is a short form of it ("Angle" for "Ang"). Default: `label`.
+    var spoken: ((Value) -> String)? = nil
     var onSelect: (Value) -> Void
     @Environment(\.tileScale) private var s
     @Environment(\.shortLine) private var shortLine
@@ -371,6 +376,9 @@ struct MiniSegmented<Value: Hashable>: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                // Which segment the camera has: VoiceOver read them all alike, set or not.
+                .accessibilityLabel(spoken?(option) ?? label(option))
+                .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
         .padding(2 * s)
@@ -406,11 +414,13 @@ struct ModeSwitch<Value: Hashable>: View {
     var onSelect: (Value) -> Void
 
     var body: some View {
+        // VoiceOver gets the whole word wherever the switch shows the short one ("ANG" was read out as letters).
         if placement.isSmall {
             ViewThatFits(in: .horizontal) {
                 MiniSegmented(options: options, selection: selection, label: short, isEnabled: isEnabled, small: true,
-                              onSelect: onSelect)
-                PillToggle(title: selection.map(short) ?? "—", lit: nil, isEnabled: isEnabled) {
+                              spoken: full, onSelect: onSelect)
+                PillToggle(title: selection.map(short) ?? "—", lit: nil, isEnabled: isEnabled,
+                           spokenTitle: selection.map(full)) {
                     if let next = next { onSelect(next) }
                 }
             }
@@ -420,7 +430,7 @@ struct ModeSwitch<Value: Hashable>: View {
                 MiniSegmented(options: options, selection: selection, label: full, isEnabled: isEnabled, small: false,
                               onSelect: onSelect)
                 MiniSegmented(options: options, selection: selection, label: short, isEnabled: isEnabled, small: false,
-                              onSelect: onSelect)
+                              spoken: full, onSelect: onSelect)
             }
         }
     }
@@ -556,6 +566,8 @@ struct ChoiceMenu<Value: Hashable, Label: View>: View {
     var current: Value? = nil
     var onSelect: (Value) -> Void
     var extra: MenuExtra? = nil
+    /// What VoiceOver gives as the menu's value. Default: the current option's title.
+    var spokenValue: String? = nil
     @ViewBuilder var label: (_ live: Bool) -> Label
     @Environment(\.tileCaption) private var caption
 
@@ -588,7 +600,7 @@ struct ChoiceMenu<Value: Hashable, Label: View>: View {
                     .menuIndicator(.hidden)
                     // Named by its tile's caption, and set to the camera's value: it read as an unnamed button.
                     .accessibilityLabel(caption ?? "")
-                    .accessibilityValue(current.map(title) ?? "")
+                    .accessibilityValue(spokenValue ?? current.map(title) ?? "")
                 }
             }
     }
@@ -694,7 +706,9 @@ struct CaptionRow<Accessory: View>: View {
             .frame(height: Theme.captionRow(Theme.textScale(s, shortLine: shortLine)))
             .overlay(alignment: Alignment(horizontal: .leading, vertical: .firstTextBaseline)) {
                 HStack(alignment: .firstTextBaseline, spacing: 6 * s) {
+                    // The tile's caption is a heading: VoiceOver's rotor goes tile to tile by them.
                     Caption(caption).fixedSize(horizontal: s * Theme.textBump == 1, vertical: s * Theme.textBump == 1).layoutPriority(2)
+                        .accessibilityAddTraits(.isHeader)
                     Spacer(minLength: 4 * s)
                     accessory().layoutPriority(1)
                 }
@@ -762,6 +776,8 @@ struct Chevron: View {
         Image(systemName: "chevron.down")
             .font(Theme.chevron(Theme.textScale(s, shortLine: shortLine)))
             .foregroundStyle(Theme.secondaryText)
+            // For the eye only: the menu over the tile is the button. VoiceOver read the symbol out as "Go Down".
+            .accessibilityHidden(true)
     }
 }
 
@@ -802,6 +818,7 @@ struct SheetChevron: View {
         Image(systemName: "chevron.forward")
             .font(Theme.chevron(Theme.textScale(s, shortLine: shortLine)))
             .foregroundStyle(Theme.secondaryText)
+            .accessibilityHidden(true)   // as `Chevron`'s: VoiceOver said "Forward"
     }
 }
 
@@ -815,6 +832,8 @@ struct PillToggle: View {
     /// scales it (`tileScale`). A taller one gives way to a line shorter than it, down to a small control's 20 pt: on a
     /// phone on its side a one-line LUT tile is 27 pt, and its 28 pt switches were cut off.
     var height: CGFloat = 20
+    /// What VoiceOver says, where `title` is a short form ("Angle" for the chip's "ANG"). Default: the title as shown.
+    var spokenTitle: String? = nil
     var action: () -> Void
     @Environment(\.tileScale) private var s
     @Environment(\.shortLine) private var shortLine
@@ -836,6 +855,7 @@ struct PillToggle: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(spokenTitle ?? title.uppercased())
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1 : 0.5)
         .audited(.control)
@@ -885,7 +905,7 @@ struct TileFrame<Main: View, Accessory: View>: View {
                     if valueWins {
                         // A VENICE's Shutter on a phone on its side read "1…" beside a whole "SHUTTER" and ANG | SPD.
                         OneLineRow(spacing: 8 * s) {
-                            Caption(caption).environment(\.captionPlacement, .line)
+                            Caption(caption).environment(\.captionPlacement, .line).accessibilityAddTraits(.isHeader)
                             HStack(spacing: 8 * s) { main(true, CGSize(width: inner, height: size.height)) }
                             // A tile shorter than a small control drops its switches rather than cut them off (§ 1).
                             if size.height >= Theme.smallControl * s {
@@ -897,6 +917,7 @@ struct TileFrame<Main: View, Accessory: View>: View {
                             Caption(caption).fixedSize(horizontal: s * Theme.textBump == 1, vertical: s * Theme.textBump == 1)
                                 .layoutPriority(2)
                                 .environment(\.captionPlacement, .line)
+                                .accessibilityAddTraits(.isHeader)
                             main(true, CGSize(width: inner, height: size.height))
                             if size.height >= Theme.smallControl * s {
                                 accessory(.inline).layoutPriority(1)
@@ -1127,9 +1148,12 @@ struct PickerValue<Option: Hashable>: View {
         // at full strength with a lock, as it's the camera's real setting; grayed, it would read as broken or stale.
         // Offline, it is stale, and grays.
         let setOnCamera = !isLive && controllable && text != "—"
+        // Read out as it's shown, detail and all ("800, base"; "120, to 23.98"): the option's title alone dropped the
+        // detail, and gave nothing where the value shown is only part of one (the bitrate's "240M").
+        let spoken = [text, detail?.replacingOccurrences(of: "→", with: "to")].compactMap { $0 }.joined(separator: ", ")
         // The option the tile shows is the one the camera has (a pending pick shows as itself until it's confirmed).
         ChoiceMenu(options: options, title: title, isEnabled: isLive, current: options.first { title($0) == text },
-                   onSelect: onSelect, extra: extra) { live in
+                   onSelect: onSelect, extra: extra, spokenValue: spoken) { live in
             ValueLine(text: text, size: size, showsChevron: live,
                       color: live || setOnCamera ? color : Theme.secondaryText,
                       alignment: alignment, multiline: multiline, detail: detail, detailIsCaption: detailIsCaption,

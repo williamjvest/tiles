@@ -217,7 +217,8 @@ struct HaLowSettingsSection: View {
             }
         } footer: {
             FooterText(store.haLowSettings.displayMode == .off ? "Nothing is looked for or polled."
-                : "One login for every node, kept in the Keychain: the admin login (root) from the nodes' setup.")
+                : "One login for every node, kept in the Keychain: the admin login (root) from the nodes' setup. A "
+                    + "Heltec node as it ships takes heltec.org.")
         }
     }
 
@@ -297,8 +298,8 @@ struct HaLowSettingsSection: View {
     }
 
     private var nodesFooter: String {
-        "Nodes are found on this network by themselves where their firmware lets the app check them first, so the "
-            + "password goes to nothing else. Add a node by address if it isn't found. Read-only, and "
+        "Nodes are found on this network by themselves, each checked without the password first, so it goes to "
+            + "nothing else. Add a node by address if it isn't found. Read-only, and "
             + "only while the app is open: the node this device is on every 10 s, any other every minute across the "
             + "HaLow link." + (store.haLowSettings.displayMode == .on
                 ? " Nodes added by hand, or that have answered, show even when they stop." : "")

@@ -63,6 +63,29 @@ final class FakeUbusNode: @unchecked Sendable {
     /// openmanetd on 8080.
     var openMANET = true
     var meshNodes: [(ip: String, hostname: String)] = []
+    /// LuCI's login page (`GET /cgi-bin/luci/`, 403 before a login): a plain OpenWrt router's by default.
+    var loginPage = #"<html><head><title>OpenWrt - LuCI</title><meta name="application-name" content="OpenWrt - LuCI"></head></html>"#
+    /// Radios whose settings say band s1g, hwmode 11ah (the morse radio), whatever their iwinfo says.
+    var s1gDevices: Set<String> = []
+    /// An interface listed first on the s1g radio that's down: no iwinfo.
+    var s1gDownInterface: String?
+    /// Nothing listens on these ports: a connection is refused.
+    var closedPorts: Set<Int> = []
+
+    /// Heltec's firmware as it ships (2.8.5, Morse Micro's OpenWrt 23.05, theme morseargon): no openmanetd; the login
+    /// page names a "MM HaLow Device"; the morse radio's settings say s1g; here a station (the factory pair's
+    /// extender), its iwinfo without "ah".
+    static func heltecStock(hostname: String = "HT-HD01-9880") -> FakeUbusNode {
+        let node = FakeUbusNode()
+        node.openMANET = false
+        node.hostname = hostname
+        node.loginPage = #"<html><head><title>\#(hostname) - LuCI</title><meta name="application-name" "#
+            + #"content="\#(hostname) - MM HaLow Device"></head><body class="login-page"></body></html>"#
+        node.radios = [("wlan1", nil, [], "Client", "0C:BF:74:00:00:09"),
+                       ("wlan0", 2_437_000, ["b", "g", "n"], "Master", "E4:38:19:00:00:09")]
+        node.s1gDevices = ["wlan1"]
+        return node
+    }
     private var sessions: Set<String> = []
     private var meshSessions: Set<String> = []
 
@@ -76,6 +99,7 @@ final class FakeUbusNode: @unchecked Sendable {
             return openmanetd(request)
         }
         guard speaksUbus else { return (200, Data("<html><body>Router</body></html>".utf8)) }
+        if url.path == "/cgi-bin/luci" { return (403, Data(loginPage.utf8)) }  // URL.path drops the trailing /
         let json = try? JSONSerialization.jsonObject(with: request.httpBody ?? Data())
         if let calls = json as? [[String: Any]] { return (200, encode(calls.map(reply))) }
         if let call = json as? [String: Any] { return (200, encode(reply(call))) }
@@ -145,7 +169,8 @@ final class FakeUbusNode: @unchecked Sendable {
             return result(0, iwinfo(radio))
         case ("iwinfo", "assoclist"):
             guard let radio else { return result(4) }
-            let stations = radio.mode == "Master" ? [apClient] : [haLowPeer].compactMap { $0 }
+            let haLow = radio.hwmodes.contains("ah") || s1gDevices.contains(radio.device)
+            let stations = haLow || radio.mode != "Master" ? [haLowPeer].compactMap { $0 } : [apClient]
             if let mac = args["mac"] as? String {  // one station, or NOT_FOUND
                 guard let station = stations.first(where: { $0.mac.lowercased() == mac.lowercased() }) else { return result(4) }
                 return result(0, station.json)
@@ -156,9 +181,14 @@ final class FakeUbusNode: @unchecked Sendable {
             if denyLuciRpc { return error(-32002) }
             var devices: [String: Any] = [:]
             for (index, radio) in radios.enumerated() {
-                devices["radio\(index)"] = ["up": true, "interfaces": [[
-                    "ifname": radio.device, "config": ["mode": radio.mode == "Master" ? "ap" : "mesh"], "iwinfo": iwinfo(radio),
-                ]]]
+                let mode = ["Master": "ap", "Client": "sta"][radio.mode] ?? "mesh"
+                devices["radio\(index)"] = [
+                    "up": true,
+                    "config": s1gDevices.contains(radio.device) ? ["band": "s1g", "hwmode": "11ah", "channel": "28"]
+                        : ["band": "2g", "channel": "1"],
+                    "interfaces": (s1gDevices.contains(radio.device) ? s1gDownInterface.map { [["ifname": $0, "config": ["mode": "ap"]]] } ?? [] : [])
+                        + [["ifname": radio.device, "config": ["mode": mode], "iwinfo": iwinfo(radio)]],
+                ]
             }
             return result(0, devices)
         case ("luci-rpc", "getDHCPLeases"):
@@ -196,7 +226,8 @@ final class FakeUbusTransport: HaLowHTTPTransport, @unchecked Sendable {
     func logins(to host: String) -> Int { lock.withLock { loginHosts.filter { $0 == host }.count } }
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
-        guard let url = request.url, let host = url.host, let node = nodes[host] else {
+        guard let url = request.url, let host = url.host, let node = nodes[host],
+              !node.closedPorts.contains(url.port ?? 80) else {
             throw URLError(.cannotConnectToHost)
         }
         let isLogin = request.httpBody.flatMap { String(data: $0, encoding: .utf8) }?.contains("\"login\"") == true
@@ -551,7 +582,7 @@ struct HaLowDiscoveryTests {
         return (monitor, transport, credentials)
     }
 
-    @Test("Bonjour finds one node; it lists the rest of the mesh; a printer gets a GET and nothing else")
+    @Test("Bonjour finds one node; it lists the rest of the mesh; a printer gets two GETs and nothing else")
     func findingOneFindsThemAll() async {
         let (monitor, transport, _) = mesh(["192.0.2.1", "192.0.2.2", "192.0.2.3"],
                                            visible: [("192.0.2.1", "node-1"), ("192.0.2.50", "Printer")])
@@ -564,11 +595,66 @@ struct HaLowDiscoveryTests {
         #expect(nodes.map(\.address) == ["192.0.2.1", "192.0.2.2", "192.0.2.3"])
         #expect(nodes.allSatisfy { $0.state == .polling && !$0.isManual })
         #expect(nodes.map(\.name) == ["node-1", "node-2", "node-3"])
-        #expect(transport.log.filter { $0.host == "192.0.2.50" }.map(\.path) == ["/auth/check"])
+        #expect(transport.log.filter { $0.host == "192.0.2.50" }.map(\.path).sorted() == ["/auth/check", "/cgi-bin/luci"])
         #expect(transport.ubusRequests(to: "192.0.2.2") == 3, "node 2 needed no check: node 1 vouched for it")
     }
 
-    @Test("An rpcd host that isn't OpenMANET never gets the password")
+    @Test("A Heltec node as it ships: its login page vouches for it, and its radio is HaLow by its band")
+    func heltecStockStation() async {
+        let (monitor, transport, _) = mesh([], visible: [], gateway: "10.42.0.1", localAddresses: ["10.42.0.100"])
+        let station = FakeUbusNode.heltecStock()
+        station.closedPorts = [8080]
+        station.s1gDownInterface = "wlan2"  // listed first on the s1g radio, and down
+        transport.nodes["10.42.0.1"] = station
+        await monitor.findNodes()
+        let stock = await node(monitor, "10.42.0.1")
+        #expect(stock?.state == .polling && stock?.name == "HT-HD01-9880" && stock?.isLocal == true)
+        #expect(stock?.stats?.signalDBm == -65 && stock?.stats?.phyRateKbps == 3500, "the station's link to its access point")
+        #expect(transport.log.filter { $0.path == "/cgi-bin/luci" }.count == 1)
+        #expect(transport.log.allSatisfy { $0.path != "/auth/check" && $0.path != "/auth/login" }, "8080 refused")
+    }
+
+    @Test("The check: a login page without the marker is a no; silence on port 80 is never a no")
+    func checkOutcomes() async {
+        let transport = FakeUbusTransport()
+        let openMANET = FakeUbusNode()
+        let stock = FakeUbusNode.heltecStock()
+        stock.closedPorts = [8080]
+        let router = FakeUbusNode()
+        router.openMANET = false
+        router.closedPorts = [8080]
+        let quietWeb = FakeUbusNode()  // something answers on 8080 (not OpenMANET), and port 80 is silent
+        quietWeb.openMANET = false
+        quietWeb.closedPorts = [80]
+        let rethemed = FakeUbusNode()  // a page that merely mentions the words
+        rethemed.openMANET = false
+        rethemed.loginPage = "<html><body>Looking for an MM HaLow Device? Try our shop.</body></html>"
+        transport.nodes = ["192.0.2.1": openMANET, "192.0.2.2": stock, "192.0.2.3": router, "192.0.2.4": quietWeb,
+                           "192.0.2.5": rethemed]
+        func check(_ address: String) async -> HaLowMonitor.NodeCheck {
+            await HaLowMonitor.identify(address, transport: transport, timeout: 1)
+        }
+        #expect(await check("192.0.2.1") == .node(.openMANET))
+        #expect(await check("192.0.2.2") == .node(.morse))
+        #expect(await check("192.0.2.3") == .notANode)
+        #expect(await check("192.0.2.4") == .noAnswer)
+        #expect(await check("192.0.2.5") == .notANode)
+        #expect(await check("192.0.2.9") == .noAnswer, "nothing there")
+    }
+
+    @Test("The factory pair's access point: the HaLow AP lists the station; the 2.4 GHz AP's phone isn't the link")
+    func heltecStockAccessPoint() async {
+        let (monitor, transport, _) = mesh([], visible: [], gateway: "192.168.100.1", localAddresses: ["192.168.100.120"])
+        let accessPoint = FakeUbusNode.heltecStock(hostname: "HT-HD01-9958")
+        accessPoint.radios = [("wlan0", 2_437_000, ["b", "g", "n"], "Master", "E4:38:19:00:00:0A"),
+                              ("wlan1", nil, ["ah"], "Master", "0C:BF:74:00:00:0A")]
+        transport.nodes["192.168.100.1"] = accessPoint
+        await monitor.findNodes()
+        let found = await node(monitor, "192.168.100.1")
+        #expect(found?.state == .polling && found?.stats?.signalDBm == -65)
+    }
+
+    @Test("An rpcd host that isn't a HaLow node (no OpenMANET, a plain LuCI login page) never gets the password")
     func plainOpenWrtIsLeftAlone() async {
         let (monitor, transport, _) = mesh([], visible: [("192.0.2.9", "OpenWrt")], gateway: "192.0.2.9")
         let router = FakeUbusNode()
@@ -593,7 +679,8 @@ struct HaLowDiscoveryTests {
         await monitor.findNodes()
         let nodes = await monitor.currentNodes()
         #expect(nodes.map(\.name) == ["node-1"] && nodes.first?.state == .needsPassword)
-        #expect(transport.log.map(\.path) == ["/auth/check"])
+        #expect(Set(transport.log.map(\.path)).isSubset(of: ["/auth/check", "/cgi-bin/luci"]),
+                "the two password-free checks, side by side, and nothing else")
     }
 
     @Test("The mesh's list is asked for once, then every 5 min; an expired OpenMANET login logs in again")

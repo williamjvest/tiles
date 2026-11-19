@@ -444,9 +444,10 @@ rate, a setting it has locked while rolling) is left as it is.
 
 Settings → **HaLow Nodes** shows the HaLow radio link from within the app. It finds the nodes by itself.
 
-1. Enter the nodes' **Password** (user `root`, the admin login from the node's setup). One login covers every node.
-2. The nodes on the network appear under **Nodes**, where their firmware lets the app check them before it sends the
-   password. The node this device is on is marked **this device's node**.
+1. Enter the nodes' **Password** (user `root`, the admin login from the node's setup; `heltec.org` on a node as Heltec
+   ships it). One login covers every node.
+2. The nodes on the network appear under **Nodes**, each checked without the password before it's sent. The node this
+   device is on is marked **this device's node**.
 3. **Add Node Address** is for a node the app can't find by itself.
 4. **Show**: *When a node answers* (default), *Always* (nodes stay listed when they stop answering), or *Off*.
 

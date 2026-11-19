@@ -47,6 +47,10 @@ struct TimecodeTile: View {
                             .capCentered(size, weight: .semibold)
                             .layoutPriority(1)
                     }
+                    // The bare numbers were all VoiceOver had to go on.
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(camera.state.timecodeShowsDuration?.shown == true ? "Duration" : "Timecode")
+                    .accessibilityValue(reading.text)
                     .padding(.horizontal, Theme.inset * s)
                     .frame(width: geo.size.width, height: geo.size.height, alignment: .centerCapCenter)
                 }
@@ -282,10 +286,17 @@ struct StatusTile: View {
         }
         // The source after the reading where it fits; a tight tile keeps the reading whole ("0% USB" was cut to "0…").
         let full = [value, source].compactMap { $0 }.joined(separator: " ")
+        // Spoken in words: in the strip, with no caption, "76%" alone didn't say what it was, nor "14.6V" how.
+        let spokenVolts = volts.map { String(format: "%.1f volts", $0) }
+        let spoken = [inVolts ? spokenVolts : percent.map { "\($0) percent" } ?? minutes.map { "\($0) minutes" } ?? spokenVolts,
+                      source].compactMap { $0 }.joined(separator: ", ")
         return ViewThatFits(in: .horizontal) {
             label(full.isEmpty ? "—" : full)
             label(value ?? source ?? "—")
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Battery")
+        .accessibilityValue(spoken.isEmpty ? "Not reported" : spoken)
     }
 
 
@@ -304,6 +315,10 @@ struct StatusTile: View {
             .font(Theme.identity(size))
             .lineLimit(1)
             .minimumScaleFactor(0.5)
+            // "142m" was read out as 142 meters.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Media")
+            .accessibilityValue(minutes.map { "\($0) minutes left" } ?? "Not reported")
     }
 
     /// Card time left as minutes ("541m") or hours and minutes ("9h01").
@@ -403,6 +418,9 @@ struct LatencyTile: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
                         .audited(.value)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("Latency")
+                        .accessibilityValue(ms.map { "\($0) milliseconds" } ?? "Not reported")
                 }
                 let oneLine = geo.size.height < (Theme.oneLineBelow + Theme.captionRowGrowth) * s
                 // The caption is wider at Text Size's bigger type: it needs that much more room beside the reading.
@@ -455,10 +473,24 @@ struct ClipNameTile: View {
             }
             if editable {
                 Button { presentTileSheet(.clipNaming(camera.id)) } label: { content }.buttonStyle(.plain)
+                    // Named by its caption, the parts as its value: the clip name in the button's name made it one
+                    // VoiceOver couldn't read as a name ("NAMING, A004C012_261022_R1AB").
+                    .accessibilityLabel("Naming")
+                    .accessibilityValue(spoken(naming))
             } else {
                 content
             }
         }
+    }
+
+    /// "Next clip C0007, title C, ID A, reel 1".
+    private func spoken(_ naming: FileNaming?) -> String {
+        var parts: [String] = []
+        if let name = camera.state.clipName { parts.append("Next clip \(name)") }
+        if let title = naming?.title { parts.append("title \(title.shown)") }
+        if let cameraID = naming?.cameraID { parts.append("ID \(cameraID.shown)") }
+        if let reel = naming?.reel { parts.append("reel \(Int(reel.shown))") }
+        return parts.joined(separator: ", ")
     }
 
     /// The name, then each part as a caption and its value, at one value size: each part starts an equal column

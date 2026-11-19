@@ -110,8 +110,8 @@ Wi-Fi of its own. A camera goes on one node's Ethernet, the iPad on another node
 carries the rest.
 
 Tiles needs nothing from the nodes but a network, and installs nothing on them. With the nodes' admin password in
-Settings → HaLow Nodes, it can also show the link it controls cameras through, its signal, rate and retries, in the
-top bar. It only reads ([`docs/halow-monitoring.md`](docs/halow-monitoring.md) has which nodes and how).
+Settings → HaLow Nodes (`heltec.org` on a node as Heltec ships it), it can also show the link it controls cameras
+through, its signal, rate and retries, in the top bar. It only reads ([`docs/halow-monitoring.md`](docs/halow-monitoring.md) has which nodes and how).
 
 <p align="center">
   <img src="hardware/halow-node-cage/images/front.jpg" width="200" alt="The HaLow node cage from the front">

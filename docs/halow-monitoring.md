@@ -1,24 +1,25 @@
 # HaLow node monitoring
 
-Tiles can show the HaLow link from the mesh node you're attached to, on any mesh of OpenMANET nodes (OpenWrt with
-Wi-Fi HaLow). It finds the nodes itself, and it is **read-only**: the app never changes a radio setting, so it can't
-cut the link it controls cameras through. Nothing about any one mesh is built in: no addresses, no node names, nothing
-installed on the nodes.
+Tiles can show the HaLow link from the node you're attached to, on Heltec's HT-HD01 nodes with the firmware Heltec
+ships (Morse Micro's OpenWrt) or with OpenMANET (OpenWrt with Wi-Fi HaLow). It finds the nodes itself, and it is
+**read-only**: the app never changes a radio setting, so it can't cut the link it controls cameras through. Nothing
+about any one network is built in: no addresses, no node names, nothing installed on the nodes.
 
 Checked on real nodes (Heltec HT-HD01, OpenMANET 1.8.0) on 2026-10-11: `camctl halow` on a Mac cabled to one node,
 with only the password set, found it over Bonjour, got the other two live nodes from its list of the mesh, polled all
-three, and listed the mesh's devices by name (static leases included).
+three, and listed the mesh's devices by name (static leases included). Heltec's own firmware is supported from its
+image and four factory units' flash (§ Heltec's firmware), not yet from a node running it.
 
 ## Setup
 
 Settings → **HaLow Nodes**:
 
-1. **Password**: the nodes' admin password (user `root` unless you change **Username**). One login for every node,
-   kept in the Keychain with the camera passwords.
+1. **Password**: the nodes' admin password (user `root` unless you change **Username**; `heltec.org` on a node as
+   Heltec ships it). One login for every node, kept in the Keychain with the camera passwords.
 2. That's it: nodes on the network appear under **Nodes**, each with its state. Opening the page also looks for nodes
    before there's a password, so you can see they're there.
-3. **Add Node Address** is the fallback, for a node the app can't find by itself (no Bonjour on that network, not
-   OpenMANET, or across a router).
+3. **Add Node Address** is the fallback, for a node the app can't find by itself (no Bonjour on that network, a
+   firmware neither check knows, or across a router).
 4. **Show:** *When a node answers* (default) shows HaLow only while a node answers. *Always* also shows nodes you
    added, and nodes that have answered, when they stop, so a dropped link reads as down instead of disappearing.
    *Off* polls and looks for nothing.
@@ -35,10 +36,13 @@ Not a HaLow node (answers, but isn't rpcd or has no HaLow radio), No answer.
    it was seen on; unpinned, a connection can stall on an interface with no route, such as a bridge member on a Mac
    that shares its internet with a node. The default gateway is a candidate too. No answer anywhere: it browses again
    every 2 min.
-2. **Check**: each candidate gets one password-free `GET :8080/auth/check` (OpenMANET's web API, openmanetd). Only a
-   host that answers it, as an OpenMANET node does, is sent the password. A plain OpenWrt router, the venue's or yours
-   at home, gets nothing more.
-3. **The rest of the mesh**: once a node answers, its API is asked for the others: `POST :8080/auth/login`
+2. **Check**: each candidate gets two password-free GETs side by side: `:8080/auth/check` (OpenMANET's web API,
+   openmanetd) and `/cgi-bin/luci/`, LuCI's login page, which on a Morse Micro HaLow node names itself
+   (`<meta name="application-name" content="<hostname> - MM HaLow Device">`, from the theme Heltec ships and the
+   OpenMANET theme forked from it). Only a host that passes one is sent the password. A login page without that line
+   makes a host not a node for the session: a plain OpenWrt router, the venue's or yours at home, gets nothing more.
+   Silence on port 80 never does; the host is asked again later.
+3. **The rest of the mesh**: once an OpenMANET node answers, its API is asked for the others: `POST :8080/auth/login`
    (same username and password; the token comes back in the JSON and goes back as the `session` cookie), then
    `openmanet.service.v1.NodeService/ListNodes` (Connect RPC, JSON). Every 5 min after that, through one answering
    node. Those addresses are polled without the check, since a node already logged into vouched for them.
@@ -46,8 +50,14 @@ Not a HaLow node (answers, but isn't rpcd or has no HaLow radio), No answer.
    1, 2, 4… min, up to 15. A host that turns out to have no HaLow radio is dropped. One node at two addresses (its LAN
    address over Bonjour, its mesh address from the list) is polled once, recognized by its HaLow interface's MAC.
 
+Heltec's firmware keeps no list of the other nodes, so each of its nodes is found by itself (Bonjour, or as the
+gateway). It's still asked for one with the rest (nothing listens on its 8080, so that's a refused connection every
+5 min): an OpenMANET node whose openmanetd was restarting when it was checked passes on its login page alone and looks
+the same. The radio's band tells the HaLow interface (`band s1g`, `hwmode 11ah` in the radio's settings, which
+`getWirelessDevices` carries) wherever iwinfo doesn't, on an interface iwinfo reports (one that's down has none).
+
 The password goes over plain HTTP, like every rpcd login. Anyone on the network can read it there, and a host faking
-OpenMANET's check could collect it; the check only keeps it away from devices that aren't pretending.
+either check could collect it; the check only keeps it away from devices that aren't pretending.
 
 ## Which node you're on
 
@@ -139,6 +149,36 @@ at its slowest rate; that's why it's one browse, not a standing one.
 - openmanetd listens on 8080 (and 8087). `/auth/check` → `{"username":"","authenticated":false,"authEnabled":true}`.
   `ListNodes` → `{"nodes":[{"mac","hostname","ipaddr","position"}]}`, every node but itself, quiet ones included.
 - rpcd's unauthenticated `session access` also identifies rpcd, but any OpenWrt box answers it, so it isn't the check.
+
+## Heltec's firmware (HT-HD01 V2, 2.8.5-20260420)
+
+Read from Heltec's image (`openwrt-2.8.5-20260420-heltec-ht-hd01-v2-squashfs-sysupgrade.bin`) and from the flash of
+four V2s as they came from Heltec (two factory pairs), 2026-11-19:
+
+- Morse Micro's OpenWrt 23.05.5 (ramips/mt76x8) with LuCI and Morse's theme, `morseargon`, active on all four.
+- uhttpd on port 80, no redirect to HTTPS. `/ubus` is set at first boot (`/etc/uci-defaults/00_uhttpd_ubus`); all
+  four had `ubus_prefix '/ubus'`. rpcd with `iwinfo.so` and `luci.so`.
+- `root` / `heltec.org`. rpcd gives root every ACL (`list read '*'`, `list write '*'`), so `system board`, `luci-rpc
+  getWirelessDevices` / `getDHCPLeases`, `uci get` and `iwinfo info` / `assoclist` are allowed; no ACL grants
+  `iwinfo devices`, as on OpenMANET. Unauthenticated: `session access` / `login` and `luci getFeatures` only.
+- The login page, `GET /cgi-bin/luci/` (403 before a login), is the theme's: LuCI's dispatcher renders
+  `themes/morseargon/sysauth`, whose `<head>` carries `<meta name="application-name" content="<hostname> - MM HaLow
+  Device">` on every page (`header.htm`, outside the theme's `blank_page` switch). That's the check. OpenMANET
+  1.8.0's `openmanetargon` header has the same line.
+- Nothing on 8080 (no openmanetd), and no list of the other nodes.
+- The morse radio: `band 's1g'`, `hwmode '11ah'`, `channel '28'`, `country 'US'`. libiwinfo (20250326, as OpenMANET's)
+  knows the `ah` hwmode.
+- A factory pair is an access point and a station, routed, not bridged. The access point (`HT-HD01-<last 4 of its
+  MAC>`): HaLow `ap` with `wds '1'` and its 2.4 GHz AP on `ahwlan`, 192.168.100.1/24 with DHCP from .100; its Ethernet
+  is `lan`, a DHCP client. The station: HaLow `sta` on `ahwlan` (a lease from the access point); its own `lan`,
+  10.42.0.1/24 with DHCP from .100, on its Ethernet, USB-C and its own 2.4 GHz AP.
+- umdns advertises uhttpd (`_http._tcp`) on `lan` and `ahwlan` (all four units' config), so on the access point's
+  Wi-Fi Bonjour finds both nodes of the pair; on the station's LAN, the station (it's the gateway there too).
+
+Not checked yet: a node running it. The first stock node to hand gets `camctl halow` with
+`CAMCTL_NODE_PASSWORD=heltec.org`, from its LAN and from the other node's Wi-Fi. Also open there: whether an access
+point with `wds '1'` lists a station that joins in 4-address mode on its own interface or on a `wlan1.staN` one (the
+factory station doesn't use WDS).
 
 ## Field check: `camctl halow`
 

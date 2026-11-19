@@ -1,7 +1,9 @@
 import Foundation
+import os
 
-// Read-only link stats from the OpenWrt (OpenMANET) HaLow nodes around the device, via rpcd's ubus JSON-RPC over HTTP
-// (uhttpd-mod-ubus), and the nodes themselves found through Bonjour and OpenMANET's own API. See docs/halow-monitoring.md.
+// Read-only link stats from the OpenWrt HaLow nodes around the device (OpenMANET, or the Morse Micro firmware Heltec
+// ships), via rpcd's ubus JSON-RPC over HTTP (uhttpd-mod-ubus), and the nodes themselves found through Bonjour, the
+// gateway and OpenMANET's own API. See docs/halow-monitoring.md.
 //
 // rpcd iwinfo.c (github.com/openwrt/rpcd): assoclist station fields include signal, noise, rate and mcs;
 //   `rate` is kbit/s as iwinfo_cli.c shows; `mcs` only for HT/VHT/HE/EHT rates.
@@ -173,10 +175,12 @@ extension URLSession: HaLowHTTPTransport {}
 /// Finds the HaLow nodes around the device and polls them, read-only.
 ///
 /// Finding: a short Bonjour browse for web servers (`_http._tcp`), plus the default gateway, gives candidates; each
-/// gets one password-free check that it's an OpenMANET node (`GET :8080/auth/check`) before the password goes to it.
-/// Then any answering node's OpenMANET API lists the rest of the mesh (`NodeService/ListNodes`), so finding one finds
-/// them all. Nodes added by hand are polled as they are. Nothing is looked for or sent without a password, except
-/// while Settings asks (`findNodes`): then it browses and checks, password-free, to list what's there.
+/// gets a password-free check that it's a HaLow node before the password goes to it (`identify`): OpenMANET's web API
+/// (`GET :8080/auth/check`), or a login page naming a Morse Micro HaLow node (`GET /cgi-bin/luci/`, as the firmware
+/// Heltec ships and OpenMANET both serve). Then any answering OpenMANET node lists the rest of the mesh
+/// (`NodeService/ListNodes`), so finding one finds them all; Heltec's firmware keeps no such list, so its nodes are
+/// found one by one. Nodes added by hand are polled as they are. Nothing is looked for or sent without a password,
+/// except while Settings asks (`findNodes`): then it browses and checks, password-free, to list what's there.
 ///
 /// Polling, per node, once: log in, then one batch finds the HaLow radio by its band (a node also runs a 2.4 GHz AP;
 /// "the first wlan" would be the phone's own Wi-Fi link), the hostname, and whether this device holds a lease there.
@@ -229,9 +233,9 @@ public actor HaLowMonitor {
         var name: String?
         var viaMesh: Bool
     }
-    /// Waiting for the OpenMANET check: found on the network, or listed by a node of the mesh.
+    /// Waiting for the check: found on the network, or listed by a node of the mesh.
     private var candidates: [String: Candidate] = [:]
-    /// Checked this session and answered: true, an OpenMANET node. A host that didn't answer isn't recorded.
+    /// Checked this session and answered: true, a HaLow node. A host that didn't answer isn't recorded.
     private var checked: [String: Bool] = [:]
     /// Another address of a node already polled under one: never polled.
     private var aliases: Set<String> = []
@@ -466,27 +470,34 @@ public actor HaLowMonitor {
         publish()
     }
 
-    /// Checks every candidate side by side; those that answer as OpenMANET nodes are found. False: the settings changed
+    /// Checks every candidate side by side; those that answer as HaLow nodes are found. False: the settings changed
     /// meanwhile.
     private func checkCandidates(generation: Int) async -> Bool {
         let pending = candidates
         candidates = [:]
         guard !pending.isEmpty else { return true }
         let transport = self.transport, timeout = requestTimeout
-        let checks = await withTaskGroup(of: (String, Bool?).self) { group in
+        let checks = await withTaskGroup(of: (String, NodeCheck).self) { group in
             for address in pending.keys {
-                group.addTask { (address, await Self.isOpenMANET(address, transport: transport, timeout: timeout)) }
+                group.addTask { (address, await Self.identify(address, transport: transport, timeout: timeout)) }
             }
-            var results: [String: Bool?] = [:]
-            for await (address, isNode) in group { results[address] = isNode }
+            var results: [String: NodeCheck] = [:]
+            for await (address, check) in group { results[address] = check }
             return results
         }
         guard generation == self.generation else { return false }
-        for case let (address, isNode?) in checks {
-            checked[address] = isNode
-            if isNode, !isKnown(address), let candidate = pending[address] {
-                found[address] = Found(name: candidate.name, viaMesh: candidate.viaMesh)
-                leasesDue.remove(address)  // its first poll reads them anyway
+        for (address, check) in checks {
+            switch check {
+            case .node:
+                checked[address] = true
+                if !isKnown(address), let candidate = pending[address] {
+                    found[address] = Found(name: candidate.name, viaMesh: candidate.viaMesh)
+                    leasesDue.remove(address)  // its first poll reads them anyway
+                }
+            case .notANode:
+                checked[address] = false
+            case .noAnswer:
+                break  // worth asking again later
             }
         }
         return true
@@ -538,7 +549,7 @@ public actor HaLowMonitor {
                 if settings.manualAddresses.contains(address) {
                     states[address] = .notHaLow
                 } else {
-                    forget(address)  // an OpenMANET box without a HaLow radio isn't one of the nodes
+                    forget(address)  // a box that passed the check but has no HaLow radio isn't one of the nodes
                     checked[address] = false
                 }
             case nil:
@@ -654,10 +665,15 @@ public actor HaLowMonitor {
         var haLow: Radio?
         var accessPoints: [String] = []
         for case let device as [String: Any] in wirelessDevices.values {
+            // The radio's own settings say sub-GHz wherever iwinfo doesn't: band s1g, hwmode 11ah, as both OpenMANET
+            // and Heltec's firmware set the morse radio.
+            let config = device["config"] as? [String: Any]
+            let s1g = config?["band"] as? String == "s1g" || config?["hwmode"] as? String == "11ah"
             for case let interface as [String: Any] in device["interfaces"] as? [Any] ?? [] {
                 guard let name = interface["ifname"] as? String else { continue }
                 let iwinfo = interface["iwinfo"] as? [String: Any]
-                if haLow == nil, isHaLow(iwinfo) {
+                // On the s1g radio, an interface iwinfo reports: one that's down has no iwinfo, and no stations.
+                if haLow == nil, s1g && iwinfo != nil || isHaLow(iwinfo) {
                     // A mesh point's or AP's BSSID is its own MAC; a station's is its AP's, shared, so not an identity.
                     let own = ["Mesh Point", "Master"].contains(iwinfo?["mode"] as? String ?? "")
                     haLow = Radio(device: name, mac: own ? (iwinfo?["bssid"] as? String)?.lowercased() : nil,
@@ -672,7 +688,66 @@ public actor HaLowMonitor {
         return haLow
     }
 
-    // MARK: OpenMANET
+    // MARK: Telling a node without a password
+
+    /// Which check a node passed.
+    enum NodeFirmware: Sendable, Equatable {
+        /// OpenMANET's openmanetd answered `/auth/check`: it can list the rest of the mesh.
+        case openMANET
+        /// Its login page is a Morse Micro HaLow node's: the firmware Heltec ships (or OpenMANET, its openmanetd away).
+        case morse
+    }
+
+    enum NodeCheck: Sendable, Equatable {
+        case node(NodeFirmware)
+        /// Its web server answered, as something else: a router, a printer. It never gets the password.
+        case notANode
+        /// Nothing conclusive answered: worth asking again later.
+        case noAnswer
+    }
+
+    /// The password-free check before the password goes anywhere: OpenMANET's web API and the login page, side by
+    /// side (they're different ports, and a host that drops both shouldn't hold up the pass for two timeouts). Only a
+    /// login page that answered without the marker makes a host "not a node" for the session; silence never does.
+    static func identify(_ address: String, transport: any HaLowHTTPTransport, timeout: TimeInterval) async -> NodeCheck {
+        await withTaskGroup(of: (NodeFirmware, Bool?).self) { group in
+            group.addTask { (.openMANET, await isOpenMANET(address, transport: transport, timeout: timeout)) }
+            // LuCI draws its login page through Lua on the node's MIPS core: more time than an API answer.
+            group.addTask { (.morse, await isMorseFirmware(address, transport: transport, timeout: timeout * 2)) }
+            var morse: Bool?
+            for await (firmware, answer) in group {
+                if firmware == .openMANET {
+                    if answer == true {
+                        group.cancelAll()
+                        return .node(.openMANET)
+                    }
+                } else {
+                    morse = answer
+                }
+            }
+            switch morse {
+            case true?: return .node(.morse)
+            case false?:
+                logger.info("\(address, privacy: .public) answered on port 80, but not as a HaLow node: never sent the password")
+                return .notANode
+            case nil: return .noAnswer
+            }
+        }
+    }
+
+    /// The firmware Heltec ships (Morse Micro's OpenWrt 23.05, LuCI theme morseargon), and OpenMANET's theme forked from
+    /// it, head every page with `<meta name="application-name" content="<hostname> - MM HaLow Device">`, the login page
+    /// LuCI serves without a login included. Nothing secret is sent. Nil: nothing answered.
+    static func isMorseFirmware(_ address: String, transport: any HaLowHTTPTransport, timeout: TimeInterval) async -> Bool? {
+        guard let url = URL(string: "http://\(address)/cgi-bin/luci/") else { return false }
+        guard let (data, response) = try? await transport.data(for: URLRequest(url: url, timeoutInterval: timeout)),
+              response is HTTPURLResponse else { return nil }
+        let page = String(decoding: data, as: UTF8.self)
+        return page.range(of: #"<meta name="application-name" content="[^"<>]* - MM HaLow Device">"#,
+                          options: .regularExpression) != nil
+    }
+
+    private static let logger = Logger(subsystem: "com.toldwell.tiles", category: "HaLow")
 
     /// OpenMANET's web API (openmanetd, port 8080) answers `/auth/check` without a login. Nothing secret is sent.
     /// Nil: nothing answered, so it's worth asking again later.
@@ -690,6 +765,8 @@ public actor HaLowMonitor {
     private func listMesh(now: Date, password: String, generation: Int) async -> Bool {
         guard lastMeshList.map({ now.timeIntervalSince($0) >= Self.meshListInterval }) ?? true else { return false }
         let local = localNodes()
+        // Every answering node is asked, Heltec's firmware too: it has no list (nothing listens on 8080, so that's one
+        // refused connection), but an OpenMANET node whose openmanetd was restarting at its check looks the same.
         let answering = knownAddresses
             .filter { states[$0] == .polling }
             .sorted { local.contains($0) && !local.contains($1) }

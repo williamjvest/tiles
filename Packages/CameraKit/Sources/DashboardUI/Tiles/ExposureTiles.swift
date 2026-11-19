@@ -812,6 +812,8 @@ struct IrisFaderTile: View {
                         .padding(.vertical, Theme.insetV * s)
                     }
                 }
+                // Names the f-number's menu, as `TileFrame` names other tiles' (it was a button with no name).
+                .environment(\.tileCaption, "Iris")
                 .padding(.horizontal, Theme.inset * s)
                 .frame(width: geo.size.width, height: geo.size.height)
             }
