@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Tiles</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; font-size: 13px; background: #2d2d30; color: #ccc; padding: 12px; }
+    label { display: block; margin-bottom: 2px; font-size: 11px; color: #aaa; }
+    input, select { width: 100%; box-sizing: border-box; background: #3c3f41; border: 1px solid #555;
+                    color: #fff; border-radius: 4px; padding: 4px 6px; margin-bottom: 10px; }
+    .row { display: flex; gap: 8px; }
+    .row > div { flex: 1; }
+    .hint { font-size: 10px; color: #888; margin-top: -8px; margin-bottom: 10px; }
+    .section-title { font-size: 10px; font-weight: 600; color: #888; text-transform: uppercase;
+                     letter-spacing: 0.05em; margin: 14px 0 6px; border-top: 1px solid #444; padding-top: 8px; }
+    button { background: #3c3f41; border: 1px solid #666; color: #ddd; border-radius: 4px;
+             padding: 4px 10px; cursor: pointer; font-size: 12px; }
+    button:hover { background: #4a4d50; }
+    #test-result { font-size: 11px; margin-top: 4px; min-height: 14px; }
+    #test-result.ok   { color: #6d6; }
+    #test-result.err  { color: #e66; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Global settings (host / port / token) ──────────────────────────── -->
+  <div class="section-title">Connection (shared by all keys)</div>
+  <div class="row">
+    <div>
+      <label>Host</label>
+      <input id="host" type="text" placeholder="127.0.0.1">
+    </div>
+    <div style="max-width:90px">
+      <label>Port</label>
+      <input id="port" type="number" placeholder="51800">
+    </div>
+  </div>
+  <label>Pairing Token</label>
+  <input id="token" type="password" placeholder="from Tiles → Settings → Control API">
+  <p class="hint">Wrong token? Find it in Tiles → Settings → Control API. The key alerts on press.</p>
+  <button id="test-btn">Test connection</button>
+  <div id="test-result"></div>
+
+  <!-- ── Per-action camera selector ─────────────────────────────────────── -->
+  <div class="section-title">Camera</div>
+  <label>Camera</label>
+  <select id="camera-select">
+    <option value="">Current page (follows app)</option>
+  </select>
+  <p class="hint">Store the UUID. Label is display-only and may change.</p>
+
+  <!-- ── Page ID (shown only for show-page / link-toggle actions) ────────── -->
+  <div id="page-section" class="hidden">
+    <div class="section-title">Page</div>
+    <label>Page ID</label>
+    <select id="page-select">
+      <option value="">— pick a page —</option>
+    </select>
+    <label>Display name (optional)</label>
+    <input id="page-name" type="text" placeholder="A+B">
+  </div>
+
+  <!-- ── Any Control (shown only for any-control action) ─────────────────── -->
+  <div id="any-control-section" class="hidden">
+    <div class="section-title">Control</div>
+    <label>Field</label>
+    <select id="control-field">
+      <option value="">— pick a field —</option>
+      <option value="iso">ISO</option>
+      <option value="baseISO">Base ISO</option>
+      <option value="shutterMode">Shutter Mode</option>
+      <option value="shutterAngle">Shutter Angle</option>
+      <option value="shutterSpeed">Shutter Speed</option>
+      <option value="wbPreset">White Balance</option>
+      <option value="kelvin">Kelvin</option>
+      <option value="tint">Tint</option>
+      <option value="iris">Iris</option>
+      <option value="ndPreset">ND Preset</option>
+      <option value="variableND">Variable ND</option>
+      <option value="frameRate">Frame Rate</option>
+      <option value="frameRateVariable">Frame Rate Variable</option>
+      <option value="offSpeedRate">Off-Speed Rate</option>
+      <option value="dynamicRange">Dynamic Range</option>
+      <option value="resolution">Resolution</option>
+      <option value="codec">Codec</option>
+      <option value="bitrate">Bitrate</option>
+      <option value="desqueeze">De-squeeze</option>
+      <option value="lut">LUT</option>
+      <option value="look">LUT (look)</option>
+      <option value="falseColor">False Color</option>
+      <option value="zebra">Zebra</option>
+      <option value="focusAssist">Focus Assist</option>
+      <option value="frameGuides">Frame Guides</option>
+      <option value="frameGrids">Frame Grids</option>
+      <option value="safeArea">Safe Area</option>
+      <option value="cleanFeed">Clean Feed</option>
+      <option value="statusText">Status Text</option>
+      <option value="zebraLevel">Zebra Level</option>
+      <option value="frameGuideRatio">Frame Guide Ratio</option>
+      <option value="focusMode">Focus Mode</option>
+      <option value="colorBars">Color Bars</option>
+      <option value="hdmiInfo">HDMI Info</option>
+      <option value="gridLines">Grid Lines</option>
+      <option value="ndMode">ND Mode</option>
+      <option value="tally">Tally</option>
+      <option value="call">Call</option>
+      <option value="colorGamut">Color Gamut</option>
+      <option value="imageFlip">Sensor Flip</option>
+      <option value="clipFlag">Clip Flag</option>
+      <option value="timecodeDuration">TC / Duration</option>
+      <option value="playbackMode">Playback Mode</option>
+      <option value="playing">Playing</option>
+      <option value="userFrameA">User Frame A</option>
+      <option value="userFrameB">User Frame B</option>
+      <option value="shootingMode">Shooting Mode</option>
+      <option value="gain">Gain</option>
+      <option value="baseSensitivity">Base Sensitivity</option>
+      <option value="recordedLUT">Recorded LUT</option>
+      <option value="proxy">Proxy</option>
+      <option value="ecs">ECS</option>
+      <option value="irisAuto">Iris Auto</option>
+      <option value="ndAuto">ND Auto</option>
+      <option value="isoAuto">ISO Auto</option>
+      <option value="steadyShot">SteadyShot</option>
+      <option value="imagerMode">Imager Mode</option>
+      <option value="subjectRecognition">Subject Recognition AF</option>
+      <option value="focusArea">Focus Area</option>
+      <option value="afTransitionSpeed">AF Transition Speed</option>
+      <option value="afSubjectShift">AF Subject Shift</option>
+      <option value="afAssist">AF Assist</option>
+    </select>
+    <label>Operation</label>
+    <select id="control-op">
+      <option value="toggle">toggle</option>
+      <option value="cycle">cycle</option>
+      <option value="set">set</option>
+      <option value="step">step</option>
+    </select>
+    <div id="control-value-row">
+      <label>Value (for set)</label>
+      <input id="control-value" type="text" placeholder="e.g. 1600">
+    </div>
+    <div id="control-by-row">
+      <label>By (for step)</label>
+      <input id="control-by" type="number" placeholder="1" value="1">
+    </div>
+  </div>
+
+  <!-- ── Focus / Zoom drive (shown only for focus/zoom actions) ──────────── -->
+  <div id="drive-section" class="hidden">
+    <div class="section-title">Drive</div>
+    <label>Direction</label>
+    <select id="drive-direction"></select>
+    <label>Speed (1–8)</label>
+    <input id="drive-speed" type="number" min="1" max="8" placeholder="3" value="3">
+  </div>
+
+  <!-- ── Assignable button (shown only for assignable action) ─────────────── -->
+  <div id="assignable-section" class="hidden">
+    <div class="section-title">Assignable Button</div>
+    <label>Button number (1–10)</label>
+    <input id="assignable-button" type="number" min="1" max="10" placeholder="1" value="1">
+    <p class="hint">Only buttons set to S&Q Motion, Base ISO/Sens., or Rec Review are accepted by Tiles.</p>
+  </div>
+
+  <!-- ── Playback (shown only for playback action) ────────────────────────── -->
+  <div id="playback-section" class="hidden">
+    <div class="section-title">Transport</div>
+    <label>Command</label>
+    <select id="playback-cmd">
+      <option value="togglePlay">Toggle Play/Pause</option>
+      <option value="play">Play</option>
+      <option value="pause">Pause</option>
+      <option value="stop">Stop</option>
+      <option value="next">Next Clip</option>
+      <option value="previous">Previous Clip</option>
+      <option value="fastForward">Fast Forward</option>
+      <option value="rewind">Rewind</option>
+      <option value="recReview">Rec Review (Sony)</option>
+      <option value="review">Into Review</option>
+      <option value="live">Back to Live</option>
+      <option value="liveReviewToggle">Live / Review Toggle</option>
+      <option value="skip">Skip (seconds)</option>
+    </select>
+    <div id="skip-seconds-row" class="hidden">
+      <label>Seconds (positive = forward, negative = back)</label>
+      <input id="skip-seconds" type="number" placeholder="5" value="5">
+    </div>
+  </div>
+
+<script>
+/* ── State ────────────────────────────────────────────────────────────────── */
+let _socket = null;
+let _uuid = null;
+let _actionUUID = null; // e.g. "com.toldwell.twcc.show-page"
+let _globalSettings = {};
+let _actionSettings = {};
+let _cameras = [];
+let _pages = [];
+
+/* ── Save helpers ─────────────────────────────────────────────────────────── */
+function getGlobal() {
+  return {
+    host:  document.getElementById('host').value.trim()  || '127.0.0.1',
+    port:  parseInt(document.getElementById('port').value) || 51800,
+    token: document.getElementById('token').value.trim(),
+  };
+}
+
+function getAction() {
+  const sel = document.getElementById('camera-select');
+  const opt = sel.options[sel.selectedIndex];
+  const s = {
+    cameraID:           sel.value || undefined,
+    cameraDisplayLabel: opt ? opt.text : undefined,
+    useCurrentPage:     !sel.value,
+  };
+  // page actions
+  const pageSel = document.getElementById('page-select');
+  if (pageSel.value) s.pageID = pageSel.value;
+  const pageName = document.getElementById('page-name').value.trim();
+  if (pageName) s.pageDisplayName = pageName;
+  // any-control
+  const ctrlField = document.getElementById('control-field').value;
+  if (ctrlField) s.controlField = ctrlField;
+  const ctrlOp = document.getElementById('control-op').value;
+  if (ctrlOp) s.controlOp = ctrlOp;
+  const ctrlVal = document.getElementById('control-value').value.trim();
+  if (ctrlVal) s.controlValue = ctrlVal;
+  const ctrlBy = parseFloat(document.getElementById('control-by').value);
+  if (!isNaN(ctrlBy)) s.controlBy = ctrlBy;
+  // playback
+  const pbCmd = document.getElementById('playback-cmd').value;
+  if (pbCmd) s.playbackCmd = pbCmd;
+  const skipSec = parseFloat(document.getElementById('skip-seconds').value);
+  if (!isNaN(skipSec)) s.skipSeconds = skipSec;
+  // focus / zoom drive
+  const driveDir = document.getElementById('drive-direction').value;
+  if (driveDir) s.direction = driveDir;
+  const driveSpd = parseInt(document.getElementById('drive-speed').value);
+  if (!isNaN(driveSpd)) s.speed = Math.max(1, Math.min(8, driveSpd));
+  // assignable button
+  const asgBtn = parseInt(document.getElementById('assignable-button').value);
+  if (!isNaN(asgBtn)) s.button = Math.max(1, Math.min(10, asgBtn));
+  return s;
+}
+
+function saveGlobal() {
+  _globalSettings = getGlobal();
+  _socket && _socket.send(JSON.stringify({ event: 'setGlobalSettings', context: _uuid, payload: _globalSettings }));
+}
+
+function saveAction() {
+  _actionSettings = getAction();
+  _socket && _socket.send(JSON.stringify({ event: 'setSettings', context: _uuid, payload: _actionSettings }));
+}
+
+/* ── Camera / page dropdown population ───────────────────────────────────── */
+function populateCameras() {
+  const sel = document.getElementById('camera-select');
+  sel.innerHTML = '<option value="">Current page (follows app)</option>';
+  for (const cam of _cameras) {
+    const opt = document.createElement('option');
+    opt.value = cam.id;
+    opt.text  = `${cam.label} · ${cam.model}`;
+    if (_actionSettings.cameraID === cam.id) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+function populatePages() {
+  const sel = document.getElementById('page-select');
+  sel.innerHTML = '<option value="">— pick a page —</option>';
+  for (const pg of _pages) {
+    const opt = document.createElement('option');
+    opt.value = pg.id;
+    opt.text  = pg.name + (pg.current ? ' (current)' : '');
+    if (_actionSettings.pageID === pg.id) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  const nameEl = document.getElementById('page-name');
+  if (_actionSettings.pageDisplayName) nameEl.value = _actionSettings.pageDisplayName;
+}
+
+function populateAnyControl() {
+  if (_actionSettings.controlField) document.getElementById('control-field').value = _actionSettings.controlField;
+  if (_actionSettings.controlOp) document.getElementById('control-op').value = _actionSettings.controlOp;
+  if (_actionSettings.controlValue != null) document.getElementById('control-value').value = _actionSettings.controlValue;
+  if (_actionSettings.controlBy != null) document.getElementById('control-by').value = _actionSettings.controlBy;
+  updateOpVisibility();
+}
+
+function populatePlayback() {
+  if (_actionSettings.playbackCmd) document.getElementById('playback-cmd').value = _actionSettings.playbackCmd;
+  if (_actionSettings.skipSeconds != null) document.getElementById('skip-seconds').value = _actionSettings.skipSeconds;
+  updateSkipVisibility();
+}
+
+function populateDrive() {
+  // Focus goes Far or Near, zoom Tele or Wide: each key stores its own motor's words.
+  const zoom = _actionUUID === 'com.toldwell.twcc.zoom';
+  const select = document.getElementById('drive-direction');
+  select.innerHTML = zoom ? '<option value="tele">Tele</option><option value="wide">Wide</option>'
+                          : '<option value="far">Far</option><option value="near">Near</option>';
+  select.value = _actionSettings.direction ?? (zoom ? 'tele' : 'far');
+  if (_actionSettings.speed != null) document.getElementById('drive-speed').value = _actionSettings.speed;
+}
+
+function populateAssignable() {
+  if (_actionSettings.button != null) document.getElementById('assignable-button').value = _actionSettings.button;
+}
+
+function showPageSection() {
+  const pageActions = ['com.toldwell.twcc.show-page', 'com.toldwell.twcc.link-toggle'];
+  document.getElementById('page-section').classList.toggle('hidden', !pageActions.includes(_actionUUID));
+  const isAnyCtrl = _actionUUID === 'com.toldwell.twcc.any-control';
+  document.getElementById('any-control-section').classList.toggle('hidden', !isAnyCtrl);
+  const isPlayback = _actionUUID === 'com.toldwell.twcc.playback';
+  document.getElementById('playback-section').classList.toggle('hidden', !isPlayback);
+  const isDrive = _actionUUID === 'com.toldwell.twcc.focus' || _actionUUID === 'com.toldwell.twcc.zoom';
+  document.getElementById('drive-section').classList.toggle('hidden', !isDrive);
+  const isAssignable = _actionUUID === 'com.toldwell.twcc.assignable';
+  document.getElementById('assignable-section').classList.toggle('hidden', !isAssignable);
+  updateOpVisibility();
+  updateSkipVisibility();
+}
+
+function updateOpVisibility() {
+  const op = document.getElementById('control-op').value;
+  document.getElementById('control-value-row').style.display = op === 'set' ? '' : 'none';
+  document.getElementById('control-by-row').style.display = op === 'step' ? '' : 'none';
+}
+
+function updateSkipVisibility() {
+  const cmd = document.getElementById('playback-cmd').value;
+  document.getElementById('skip-seconds-row').classList.toggle('hidden', cmd !== 'skip');
+}
+
+/* ── Test connection ─────────────────────────────────────────────────────── */
+document.getElementById('test-btn').addEventListener('click', function() {
+  const g = getGlobal();
+  const el = document.getElementById('test-result');
+  el.className = '';
+  el.textContent = 'Connecting…';
+  try {
+    const ws = new WebSocket('ws://' + g.host + ':' + g.port + '/');
+    const timeout = setTimeout(function() { ws.close(); }, 5000);
+    ws.onopen = function() {
+      ws.send(JSON.stringify({ type: 'auth', token: g.token }));
+    };
+    ws.onmessage = function(ev) {
+      clearTimeout(timeout);
+      try {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === 'hello') {
+          _cameras = msg.cameras || [];
+          _pages   = msg.pages   || [];
+          populateCameras();
+          populatePages();
+          el.className = 'ok';
+          el.textContent = '✓ Connected — ' + _cameras.length + ' camera(s)';
+          ws.send(JSON.stringify({ type: 'subscribe' }));
+        } else if (msg.type === 'error') {
+          el.className = 'err';
+          el.textContent = '✗ ' + (msg.message || msg.code);
+          ws.close();
+        }
+      } catch (_) {}
+    };
+    ws.onerror = function() {
+      clearTimeout(timeout);
+      el.className = 'err';
+      el.textContent = '✗ Couldn\'t connect';
+    };
+    ws.onclose = function() { clearTimeout(timeout); };
+  } catch (e) {
+    el.className = 'err';
+    el.textContent = '✗ ' + e.message;
+  }
+});
+
+/* ── Change listeners ─────────────────────────────────────────────────────── */
+['host','port','token'].forEach(function(id) {
+  document.getElementById(id).addEventListener('change', saveGlobal);
+});
+['camera-select','page-select','page-name',
+ 'control-field','control-op','control-value','control-by',
+ 'playback-cmd','skip-seconds',
+ 'drive-direction','drive-speed',
+ 'assignable-button'].forEach(function(id) {
+  document.getElementById(id).addEventListener('change', saveAction);
+});
+document.getElementById('control-op').addEventListener('change', updateOpVisibility);
+document.getElementById('playback-cmd').addEventListener('change', updateSkipVisibility);
+
+/* ── Stream Deck SDK connection ───────────────────────────────────────────── */
+function connectElgatoStreamDeckSocket(port, uuid, registerEvent, info, actionInfo) {
+  _uuid = uuid;
+  _socket = new WebSocket('ws://localhost:' + port);
+
+  const parsed      = typeof actionInfo === 'string' ? JSON.parse(actionInfo) : actionInfo;
+  const infoObj     = typeof info       === 'string' ? JSON.parse(info)       : info;
+  _actionSettings   = parsed?.payload?.settings || {};
+  _actionUUID       = parsed?.action || '';
+  _globalSettings   = infoObj?.plugin?.settings || {};
+
+  // Populate UI from existing settings
+  document.getElementById('host').value  = _globalSettings.host  || '';
+  document.getElementById('port').value  = _globalSettings.port  || '';
+  document.getElementById('token').value = _globalSettings.token || '';
+  showPageSection();
+  populateDrive();
+  populateAssignable();
+
+  _socket.onopen = function() {
+    _socket.send(JSON.stringify({ event: registerEvent, uuid }));
+    // Request global settings so we have the latest
+    _socket.send(JSON.stringify({ event: 'getGlobalSettings', context: uuid }));
+  };
+
+  _socket.onmessage = function(event) {
+    try {
+      const msg = JSON.parse(event.data);
+      if (msg.event === 'didReceiveSettings') {
+        _actionSettings = msg.payload?.settings || {};
+        populateCameras();
+        populatePages();
+        populateAnyControl();
+        populatePlayback();
+        populateDrive();
+        populateAssignable();
+      }
+      if (msg.event === 'didReceiveGlobalSettings') {
+        _globalSettings = msg.payload?.settings || {};
+        document.getElementById('host').value  = _globalSettings.host  || '';
+        document.getElementById('port').value  = _globalSettings.port  || '';
+        document.getElementById('token').value = _globalSettings.token || '';
+      }
+      if (msg.event === 'sendToPropertyInspector' && msg.payload?.cameras) {
+        _cameras = msg.payload.cameras;
+        _pages   = msg.payload.pages || [];
+        populateCameras();
+        populatePages();
+      }
+    } catch (_) {}
+  };
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+Connecting to 127.0.0.1 for dump…
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Camera dump: unknown model
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[ Decoded properties ]
+  Recording:    unknown
+
+[ Raw properties ]
+  Code      Type     GetSet   Enabled  Current (hex)
+  ────────────────────────────────────────────────────────────
+  0xD057    0x0006   r        disp     64000000
+  0xD059    0x0006   r        disp     64000000
+  0xD05A    0x0006   r        disp     64000000
+  0xD0BF    0x0006   r        disp     64000000
+  0xD0C1    0x0006   r        yes      f4ff3f00
+  0xD1C0    0x0006   r        yes      64000000
+  0xD1D3    0x0006   r        yes      64000000
+  0xD1DA    0x0002   r        yes      02
+  0xD215    0x0004   r        yes      0000
+  0xD26A    0x0002   r/w      yes      02
+  0xD278    0xFFFF   r        yes      
+

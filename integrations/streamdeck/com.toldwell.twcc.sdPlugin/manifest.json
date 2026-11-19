@@ -1,0 +1,724 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "Name": "Tiles",
+  "Version": "2.4.0.0",
+  "SDKVersion": 2,
+  "Author": "Toldwell",
+  "Description": "Control Sony cinema cameras through Tiles on your local network.",
+  "Category": "Tiles",
+  "CategoryIcon": "imgs/icon-rec",
+  "Icon": "imgs/plugin-icon",
+  "CodePath": "bin/plugin.js",
+  "Nodejs": {
+    "Version": "20"
+  },
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "13"
+    }
+  ],
+  "Software": {
+    "MinimumVersion": "6.6"
+  },
+  "UUID": "com.toldwell.twcc",
+  "PropertyInspectorPath": "ui/inspector.html",
+  "Actions": [
+    {
+      "Name": "REC Toggle",
+      "UUID": "com.toldwell.twcc.rec",
+      "Icon": "imgs/icon-rec",
+      "Tooltip": "Start or stop recording. Red when the camera confirms recording; amber while a REC request is pending.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/key-rec-idle",
+          "Name": "Idle / Unknown"
+        },
+        {
+          "Image": "imgs/key-rec-active",
+          "Name": "Recording"
+        },
+        {
+          "Image": "imgs/key-rec-pending",
+          "Name": "Pending"
+        }
+      ]
+    },
+    {
+      "Name": "ISO +",
+      "UUID": "com.toldwell.twcc.iso-up",
+      "Icon": "imgs/icon-iso-up",
+      "Tooltip": "Step ISO up to the next camera option. Title shows live value.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-iso-up"
+        }
+      ]
+    },
+    {
+      "Name": "ISO −",
+      "UUID": "com.toldwell.twcc.iso-down",
+      "Icon": "imgs/icon-iso-down",
+      "Tooltip": "Step ISO down to the previous camera option. Title shows live value.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-iso-down"
+        }
+      ]
+    },
+    {
+      "Name": "Shutter +",
+      "UUID": "com.toldwell.twcc.shutter-up",
+      "Icon": "imgs/icon-shutter-up",
+      "Tooltip": "Step shutter angle / speed up.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-shutter-up"
+        }
+      ]
+    },
+    {
+      "Name": "Shutter −",
+      "UUID": "com.toldwell.twcc.shutter-down",
+      "Icon": "imgs/icon-shutter-down",
+      "Tooltip": "Step shutter angle / speed down.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-shutter-down"
+        }
+      ]
+    },
+    {
+      "Name": "Iris +",
+      "UUID": "com.toldwell.twcc.iris-up",
+      "Icon": "imgs/icon-iris-up",
+      "Tooltip": "Step iris open (lower f-stop).",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-iris-up"
+        }
+      ]
+    },
+    {
+      "Name": "Iris −",
+      "UUID": "com.toldwell.twcc.iris-down",
+      "Icon": "imgs/icon-iris-down",
+      "Tooltip": "Step iris closed (higher f-stop).",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-iris-down"
+        }
+      ]
+    },
+    {
+      "Name": "Kelvin +",
+      "UUID": "com.toldwell.twcc.kelvin-up",
+      "Icon": "imgs/icon-kelvin-up",
+      "Tooltip": "Step colour temperature up (warmer).",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-kelvin-up"
+        }
+      ]
+    },
+    {
+      "Name": "Kelvin −",
+      "UUID": "com.toldwell.twcc.kelvin-down",
+      "Icon": "imgs/icon-kelvin-down",
+      "Tooltip": "Step colour temperature down (cooler).",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-kelvin-down"
+        }
+      ]
+    },
+    {
+      "Name": "WB Preset Cycle",
+      "UUID": "com.toldwell.twcc.wb-cycle",
+      "Icon": "imgs/icon-wb",
+      "Tooltip": "Cycle to the next white balance preset.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-wb"
+        }
+      ]
+    },
+    {
+      "Name": "LUT On/Off",
+      "UUID": "com.toldwell.twcc.lut",
+      "Icon": "imgs/icon-lut",
+      "Tooltip": "Toggle the monitor LUT on or off.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/key-lut-off",
+          "Name": "LUT Off"
+        },
+        {
+          "Image": "imgs/key-lut-on",
+          "Name": "LUT On"
+        }
+      ]
+    },
+    {
+      "Name": "False Colour",
+      "UUID": "com.toldwell.twcc.false-color",
+      "Icon": "imgs/icon-false-color",
+      "Tooltip": "Toggle false colour exposure assist.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/key-false-color-off",
+          "Name": "False Colour Off"
+        },
+        {
+          "Image": "imgs/key-false-color-on",
+          "Name": "False Colour On"
+        }
+      ]
+    },
+    {
+      "Name": "FPS Cycle",
+      "UUID": "com.toldwell.twcc.framerate-cycle",
+      "Icon": "imgs/icon-framerate",
+      "Tooltip": "Cycle to the next project frame rate.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-framerate"
+        }
+      ]
+    },
+    {
+      "Name": "Show Page",
+      "UUID": "com.toldwell.twcc.show-page",
+      "Icon": "imgs/icon-page",
+      "Tooltip": "Switch the active page in Tiles.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-page"
+        }
+      ]
+    },
+    {
+      "Name": "Link Toggle",
+      "UUID": "com.toldwell.twcc.link-toggle",
+      "Icon": "imgs/icon-link",
+      "Tooltip": "Toggle the link group on the current page.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/key-link-off",
+          "Name": "Link Off"
+        },
+        {
+          "Image": "imgs/key-link-on",
+          "Name": "Link On"
+        }
+      ]
+    },
+    {
+      "Name": "ISO Dial",
+      "UUID": "com.toldwell.twcc.dial-iso",
+      "Icon": "imgs/icon-iso-up",
+      "Tooltip": "Rotate to adjust ISO. Press to toggle base ISO.",
+      "Controllers": [
+        "Encoder"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-iso-up"
+        }
+      ],
+      "Encoder": {
+        "layout": "$A1",
+        "TriggerDescription": {
+          "Rotate": "Adjust ISO",
+          "Push": "Toggle base ISO"
+        }
+      }
+    },
+    {
+      "Name": "Shutter Dial",
+      "UUID": "com.toldwell.twcc.dial-shutter",
+      "Icon": "imgs/icon-shutter-up",
+      "Tooltip": "Rotate to adjust shutter. Press to toggle angle/speed mode.",
+      "Controllers": [
+        "Encoder"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-shutter-up"
+        }
+      ],
+      "Encoder": {
+        "layout": "$A1",
+        "TriggerDescription": {
+          "Rotate": "Adjust shutter",
+          "Push": "Toggle angle/speed mode"
+        }
+      }
+    },
+    {
+      "Name": "Kelvin Dial",
+      "UUID": "com.toldwell.twcc.dial-kelvin",
+      "Icon": "imgs/icon-kelvin-up",
+      "Tooltip": "Rotate to adjust colour temperature. Press to cycle WB preset.",
+      "Controllers": [
+        "Encoder"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-kelvin-up"
+        }
+      ],
+      "Encoder": {
+        "layout": "$A1",
+        "TriggerDescription": {
+          "Rotate": "Adjust colour temperature",
+          "Push": "Cycle WB preset"
+        }
+      }
+    },
+    {
+      "Name": "Tint Dial",
+      "UUID": "com.toldwell.twcc.dial-tint",
+      "Icon": "imgs/icon-tint-up",
+      "Tooltip": "Rotate to adjust tint. Press to step tint toward 0.",
+      "Controllers": [
+        "Encoder"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-tint-up"
+        }
+      ],
+      "Encoder": {
+        "layout": "$A1",
+        "TriggerDescription": {
+          "Rotate": "Adjust tint",
+          "Push": "Step tint toward 0"
+        }
+      }
+    },
+    {
+      "Name": "Iris Dial",
+      "UUID": "com.toldwell.twcc.dial-iris",
+      "Icon": "imgs/icon-iris-up",
+      "Tooltip": "Rotate to adjust iris. Press to open iris one stop.",
+      "Controllers": [
+        "Encoder"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-iris-up"
+        }
+      ],
+      "Encoder": {
+        "layout": "$A1",
+        "TriggerDescription": {
+          "Rotate": "Adjust iris",
+          "Push": "Open iris one stop"
+        }
+      }
+    },
+    {
+      "Name": "Variable ND Dial",
+      "UUID": "com.toldwell.twcc.dial-nd",
+      "Icon": "imgs/icon-nd-up",
+      "Tooltip": "Rotate to adjust variable ND. Press to decrease ND.",
+      "Controllers": [
+        "Encoder"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-nd-up"
+        }
+      ],
+      "Encoder": {
+        "layout": "$A1",
+        "TriggerDescription": {
+          "Rotate": "Adjust ND",
+          "Push": "Decrease ND"
+        }
+      }
+    },
+    {
+      "Name": "Clean Feed",
+      "UUID": "com.toldwell.twcc.clean-feed",
+      "Icon": "imgs/icon-toggle",
+      "Tooltip": "Clean feed on or off on every output that has it (Blackmagic). In Tiles, a tile can set one output.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/key-clean-feed-off",
+          "Name": "Clean Feed Off"
+        },
+        {
+          "Image": "imgs/key-clean-feed-on",
+          "Name": "Clean Feed On"
+        }
+      ]
+    },
+    {
+      "Name": "Status Text",
+      "UUID": "com.toldwell.twcc.status-text",
+      "Icon": "imgs/icon-toggle",
+      "Tooltip": "The camera's status text on or off on every output (Blackmagic PYXIS).",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/key-status-text-off",
+          "Name": "Status Text Off"
+        },
+        {
+          "Image": "imgs/key-status-text-on",
+          "Name": "Status Text On"
+        }
+      ]
+    },
+    {
+      "Name": "Zebra",
+      "UUID": "com.toldwell.twcc.zebra",
+      "Icon": "imgs/icon-toggle",
+      "Tooltip": "Zebra on or off on every output (Blackmagic).",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/key-zebra-off",
+          "Name": "Zebra Off"
+        },
+        {
+          "Image": "imgs/key-zebra-on",
+          "Name": "Zebra On"
+        }
+      ]
+    },
+    {
+      "Name": "Focus Assist",
+      "UUID": "com.toldwell.twcc.focus-assist",
+      "Icon": "imgs/icon-toggle",
+      "Tooltip": "Focus assist on or off on every output (Blackmagic).",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/key-focus-assist-off",
+          "Name": "Focus Assist Off"
+        },
+        {
+          "Image": "imgs/key-focus-assist-on",
+          "Name": "Focus Assist On"
+        }
+      ]
+    },
+    {
+      "Name": "Frame Guides",
+      "UUID": "com.toldwell.twcc.frame-guides",
+      "Icon": "imgs/icon-toggle",
+      "Tooltip": "Frame guides on or off on every output (Blackmagic).",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/key-frame-guides-off",
+          "Name": "Frame Guides Off"
+        },
+        {
+          "Image": "imgs/key-frame-guides-on",
+          "Name": "Frame Guides On"
+        }
+      ]
+    },
+    {
+      "Name": "HDMI Info",
+      "UUID": "com.toldwell.twcc.hdmi-info",
+      "Icon": "imgs/icon-toggle",
+      "Tooltip": "Show camera info overlay on the HDMI output (Sony). Off = clean HDMI.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/key-hdmi-info-off",
+          "Name": "HDMI Info Off"
+        },
+        {
+          "Image": "imgs/key-hdmi-info-on",
+          "Name": "HDMI Info On"
+        }
+      ]
+    },
+    {
+      "Name": "Grid Lines",
+      "UUID": "com.toldwell.twcc.grid-lines",
+      "Icon": "imgs/icon-toggle",
+      "Tooltip": "The camera's grid lines on or off (Sony).",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/key-grid-lines-off",
+          "Name": "Grid Lines Off"
+        },
+        {
+          "Image": "imgs/key-grid-lines-on",
+          "Name": "Grid Lines On"
+        }
+      ]
+    },
+    {
+      "Name": "ND +",
+      "UUID": "com.toldwell.twcc.nd-up",
+      "Icon": "imgs/icon-nd-up",
+      "Tooltip": "Step ND preset up (more ND). Cinema-line cameras only; alerts on cameras without ndPreset. Title shows live value.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-nd-up"
+        }
+      ]
+    },
+    {
+      "Name": "ND −",
+      "UUID": "com.toldwell.twcc.nd-down",
+      "Icon": "imgs/icon-nd-down",
+      "Tooltip": "Step ND preset down (less ND). Cinema-line cameras only; alerts on cameras without ndPreset. Title shows live value.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-nd-down"
+        }
+      ]
+    },
+    {
+      "Name": "Tint +",
+      "UUID": "com.toldwell.twcc.tint-up",
+      "Icon": "imgs/icon-tint-up",
+      "Tooltip": "Step tint up by 1. Alerts on cameras without tint. Title shows live value.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-tint-up"
+        }
+      ]
+    },
+    {
+      "Name": "Tint −",
+      "UUID": "com.toldwell.twcc.tint-down",
+      "Icon": "imgs/icon-tint-down",
+      "Tooltip": "Step tint down by 1. Alerts on cameras without tint. Title shows live value.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-tint-down"
+        }
+      ]
+    },
+    {
+      "Name": "Any Control",
+      "UUID": "com.toldwell.twcc.any-control",
+      "Icon": "imgs/icon-any-control",
+      "Tooltip": "Send any field command: set, step, toggle, or cycle. Pick the field and operation in the inspector. Title shows live value; lit when a bool field is true.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/key-any-control-off",
+          "Name": "Inactive"
+        },
+        {
+          "Image": "imgs/key-any-control-on",
+          "Name": "Active"
+        }
+      ]
+    },
+    {
+      "Name": "Playback",
+      "UUID": "com.toldwell.twcc.playback",
+      "Icon": "imgs/icon-playback",
+      "Tooltip": "Send a transport command: play, pause, next, previous, skip, live/review, etc. Alerts if the camera does not support the command right now.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/key-playback-idle",
+          "Name": "Idle / Paused"
+        },
+        {
+          "Image": "imgs/key-playback-active",
+          "Name": "Playing"
+        }
+      ]
+    },
+    {
+      "Name": "Lock",
+      "UUID": "com.toldwell.twcc.lock",
+      "Icon": "imgs/icon-lock",
+      "Tooltip": "Lock or unlock the app's controls. Lit (state 1) while the app is locked. The API's own commands always work while locked.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/key-lock-off",
+          "Name": "Unlocked"
+        },
+        {
+          "Image": "imgs/key-lock-on",
+          "Name": "Locked"
+        }
+      ]
+    },
+    {
+      "Name": "TC / Duration",
+      "UUID": "com.toldwell.twcc.tc-duration",
+      "Icon": "imgs/icon-tc-duration",
+      "Tooltip": "Toggle timecode display between timecode and take duration (VENICE). Lit while showing duration.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "DisableAutomaticStates": true,
+      "States": [
+        {
+          "Image": "imgs/key-tc-duration-off",
+          "Name": "Timecode"
+        },
+        {
+          "Image": "imgs/key-tc-duration-on",
+          "Name": "Duration"
+        }
+      ]
+    },
+    {
+      "Name": "Focus",
+      "UUID": "com.toldwell.twcc.focus",
+      "Icon": "imgs/icon-focus",
+      "Tooltip": "Drives an FX6's focus Near or Far while held, at speed 1–8; stops when let go.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-focus"
+        }
+      ]
+    },
+    {
+      "Name": "Zoom",
+      "UUID": "com.toldwell.twcc.zoom",
+      "Icon": "imgs/icon-zoom",
+      "Tooltip": "Drives an FX6's power zoom Wide or Tele while held, at speed 1–8; stops when let go.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-zoom"
+        }
+      ]
+    },
+    {
+      "Name": "Assignable Button",
+      "UUID": "com.toldwell.twcc.assignable",
+      "Icon": "imgs/icon-assignable",
+      "Tooltip": "Presses one of an FX6's assignable buttons (1–10). Tiles presses only buttons set to S&Q Motion, Base ISO/Sens. or Rec Review.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-assignable"
+        }
+      ]
+    },
+    {
+      "Name": "Autofocus",
+      "UUID": "com.toldwell.twcc.autofocus",
+      "Icon": "imgs/icon-autofocus",
+      "Tooltip": "Push autofocus: a Blackmagic camera's one-shot, an FX5's Push AF. Only while the camera's focus is manual (MF).",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-autofocus"
+        }
+      ]
+    }
+  ]
+}

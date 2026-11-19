@@ -1,0 +1,21 @@
+include:
+  - project.yml
+targets:
+  TilesUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources: [TilesUITests]
+    dependencies:
+      - target: CameraControl
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  TilesUITests:
+    build:
+      targets:
+        CameraControl: all
+        TilesUITests: [test]
+    test:
+      targets: [TilesUITests]

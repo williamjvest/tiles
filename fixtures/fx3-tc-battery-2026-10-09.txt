@@ -1,0 +1,45 @@
+# FX3 Live Capture — 2026-10-09
+# Host: 192.0.2.203  Tunnel: 127.0.0.1:15740  vendorCodeVersion: 310
+# Tools: ptplab (tc-battery branch), ptplab 127.0.0.1 get:…
+# All values little-endian hex as returned by SDIO_GetAllExtDevicePropInfo.
+
+## Idle (not recording, D0D6=Free Run)
+
+0xD0D3  current=[00 00 00 17]  enabled=enabled   getSet=getSet    # TC Preset: 00:00:00:23
+0xD0D5  current=[00]           enabled=disabled  getSet=getSet    # TC Format: disabled
+0xD0D6  current=[02]           enabled=enabled   getSet=getSet    # TC Run: 0x02=Free Run
+0xD0D7  current=[01]           enabled=enabled   getSet=getSet    # TC Make: 0x01
+0xD120  not reported           (409 props total)                   # Recording Duration: absent on FX3
+0xD218  current=[1d]           enabled=enabled   getSet=getOnly   # Battery Remaining: INT8 29 (=29%)
+0xD204  not reported                                              # Total Battery Remaining: absent on FX3
+0xD20E  current=[05]           enabled=enabled   getSet=getOnly   # Battery Level Indicator: 0x05=Level 2/4
+0xD037  not reported                                              # Battery Remain Display Unit: absent
+0xD038  not reported                                              # Battery Remaining in Minutes: absent
+0xD039  not reported                                              # Battery Remaining in Voltage: absent
+
+## During recording (D2C8 start sent at t≈0.17s, stop at t≈9.49s)
+# D0D3 sampled at t≈0.2s, 2.7s, 4.9s, 7.2s, 9.5s — value identical across all samples:
+
+0xD0D3  current=[00 00 00 17]  (t=0.20s, recording just started)
+0xD0D3  current=[00 00 00 17]  (t=2.74s, ~2.5s into take)
+0xD0D3  current=[00 00 00 17]  (t=4.96s, ~4.8s into take)
+0xD0D3  current=[00 00 00 17]  (t=7.15s, ~7.0s into take)
+0xD0D3  current=[00 00 00 17]  (t=9.48s, ~9.3s into take — just before stop)
+0xD21D  current=[01]  during recording (0x01=Recording state, confirmed)
+0xD21D  current=[00]  idle (0x00=Not Recording, confirmed at idle samples)
+
+## Post-stop battery
+0xD218  current=[1c]  (28% — dropped 1% during the ~10s take; plausible measurement noise)
+0xD20E  current=[05]  (still Level 2/4)
+
+## Key conclusions
+# 1. 0xD0D3 NEVER advances over PTP — it is a static preset. Confirmed across 5 samples
+#    spanning 9+ seconds during active recording. The app must run TC locally.
+# 2. 0xD120 (Recording Duration) is NOT reported by FX3 (only FX6/BURANO per compat table).
+#    Take runtime must be derived from the camera-confirmed REC start timestamp.
+# 3. 0xD218 datatype is INT8 (SDIDataType 0x0001), NOT UINT8 (0x0002). currentUInt8()
+#    returns nil on this property. Must use currentInt8() cast to Int. Range is -1..100;
+#    0xFF (untaken) means no battery. Values 28–29 are plausible for a partially-charged NP-FZ100.
+# 4. 0xD204/D037/D038/D039 all absent on FX3.
+# 5. TC Run mode: 0x02=Free Run (confirmed at idle). In Free Run, TC should tick continuously
+#    regardless of recording state. Current code gates on isRecording — wrong.

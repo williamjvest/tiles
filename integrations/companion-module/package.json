@@ -1,0 +1,32 @@
+{
+  "name": "companion-module-toldwell-twcc",
+  "version": "0.5.0",
+  "main": "dist/main.js",
+  "type": "module",
+  "scripts": {
+    "build": "node_modules/.bin/tsc -p tsconfig.build.json",
+    "dev": "node_modules/.bin/tsc -p tsconfig.build.json --watch",
+    "package": "npm run build && node_modules/.bin/companion-module-build",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --testPathPattern=tests/",
+    "lint": "eslint src"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": "^22.20 || ^26.5"
+  },
+  "dependencies": {
+    "@companion-module/base": "~2.2.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@companion-module/tools": "^3.1.1",
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.12",
+    "eslint": "^10.13.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.9.10",
+    "ts-jest": "^29.2.5",
+    "typescript": "~5.5.4",
+    "typescript-eslint": "^8.72.1"
+  }
+}
