@@ -87,6 +87,7 @@ struct CameraControlApp: App {
                 #elseif os(iOS)
                 .modifier(KeepScreenOn(store: store))
                 #endif
+                .modifier(AgeAssurance(store: store))
                 .task {
                     // Create the control server once the store is available.
                     let server = ControlServer(tokenStore: controlTokenStore, store: store)

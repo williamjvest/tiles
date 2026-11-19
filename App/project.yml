@@ -107,3 +107,5 @@ targets:
         DEVELOPMENT_TEAM: $(TOLDWELL_TEAM_ID)
         ENABLE_HARDENED_RUNTIME: YES
         "CODE_SIGN_ENTITLEMENTS[sdk=macosx*]": CameraControl/CameraControl-macOS.entitlements
+        # The Declared Age Range API (AgeAssurance.swift), on a device; the simulator signs without it.
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": CameraControl/CameraControl-iOS.entitlements

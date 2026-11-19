@@ -113,8 +113,11 @@ public final class FakeBlackmagicCameraTLS: @unchecked Sendable {
 
         let p12Data = try Data(contentsOf: p12URL)
         var items: CFArray?
-        let opts = [kSecImportExportPassphrase as String: "testpass"] as CFDictionary
-        let status = SecPKCS12Import(p12Data as CFData, opts, &items)
+        var options: [String: Any] = [kSecImportExportPassphrase as String: "testpass"]
+        // In memory only: imported into the keychain, it failed (-26276) wherever the login keychain can't be reached,
+        // as from a process outside the logged-in session.
+        if #available(macOS 15.0, iOS 18.0, *) { options[kSecImportToMemoryOnly as String] = true }
+        let status = SecPKCS12Import(p12Data as CFData, options as CFDictionary, &items)
         guard status == errSecSuccess,
               let arr = items as? [[String: Any]],
               let first = arr.first,
