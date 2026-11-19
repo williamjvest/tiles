@@ -31,11 +31,6 @@ Tiles is made by [Toldwell](https://toldwell.com) and is in beta. Support, terms
     <td width="33%"><img src="docs/images/bts-video-village.jpg" alt="Tiles beside the monitor under a tent during a car scene"></td>
     <td width="33%"><img src="docs/images/bts-car-rig.jpg" alt="Tiles on an iPad mini inside a car for a moving shot, beside the monitor and above a set of wheels"></td>
   </tr>
-  <tr>
-    <td>The focus puller's station on a camera cart, a VENICE 2's page on an iPad mini.</td>
-    <td>Under the tent for a car scene.</td>
-    <td>Inside the car for a moving shot.</td>
-  </tr>
 </table>
 
 <table>
@@ -43,11 +38,6 @@ Tiles is made by [Toldwell](https://toldwell.com) and is in beta. Support, terms
     <td width="33%"><img src="docs/images/bts-three-cameras.jpg" alt="An iPad mini in a cage, held during an interview: an FX5, an FX3 and an FX30 on one page, all three rolling"></td>
     <td width="33%"><img src="docs/images/bts-pyxis-cart.jpg" alt="In black and white: a PYXIS 12K's page with white tiles on an iPad mini on a camera cart, filter cases below it"></td>
     <td width="33%"><img src="docs/images/bts-alexa-mini.jpg" alt="An iPad mini on an ALEXA Mini's rig, under the camera's monitor, with the camera's page"></td>
-  </tr>
-  <tr>
-    <td>Three cameras rolling at once during an interview.</td>
-    <td>A PYXIS 12K's page on the camera cart, with white tiles (Settings → Appearance).</td>
-    <td>On an ALEXA Mini's rig, under its monitor.</td>
   </tr>
 </table>
 
@@ -78,7 +68,8 @@ offers, and how each was checked, is in `docs/` (one file per camera family).
 - **Pages your way:** tiles in any arrangement, kept separately for portrait and landscape, a color per camera, and
   a look of your own in Settings → Appearance.
 - **Demo cameras and Test Mode,** to lay pages out without a camera.
-- **Wi-Fi HaLow mesh links:** the signal, rate and retries of a mesh's OpenMANET nodes, read-only, in the top bar.
+- **Wi-Fi HaLow links:** the signal, rate and retries of the HaLow nodes between you and the cameras, read-only, in
+  the top bar.
 
 <table>
   <tr>
@@ -86,11 +77,6 @@ offers, and how each was checked, is in `docs/` (one file per camera family).
     <td width="25%"><img src="docs/images/iphone-two-cameras.jpg" alt="Tiles on an iPhone with two cameras, one at a time"></td>
     <td width="50%"><img src="docs/images/ipad-pyxis.jpg" alt="Tiles on an iPad with a PYXIS 12K: off-speed frame rate, resolution, codec, dynamic range, LUT, false color and frame guides"><br><br>
       <img src="docs/images/ipad-edit.jpg" alt="The same PYXIS page in edit mode: every tile with its remove and resize handles"></td>
-  </tr>
-  <tr>
-    <td>An FX3 on an iPhone.</td>
-    <td>Two cameras on a phone, one at a time.</td>
-    <td>A PYXIS 12K's page, and the same page in edit mode.</td>
   </tr>
 </table>
 
@@ -118,16 +104,14 @@ token) that anything on the network can use to follow a camera's state and send 
 ## Wi-Fi HaLow
 
 On set, Tiles often reaches its cameras over a Wi-Fi HaLow mesh rather than Wi-Fi: Heltec's
-[HT-HD01 V2](https://heltec.org/project/ht-hd01/) dongles running [OpenMANET](https://github.com/OpenMANET). Each is a
-Morse Micro HaLow radio on the 902–928 MHz band with an RJ45 port, a USB-C port that carries Ethernet and power (a Mac
-or iPad needs no driver for it) and 2.4 GHz Wi-Fi of its own. A camera goes on one node's Ethernet, the iPad on
-another node's USB-C or Wi-Fi, and the mesh carries the rest.
+[HT-HD01 V2](https://heltec.org/project/ht-hd01/) dongles. Each is a Morse Micro HaLow radio on the 902–928 MHz band
+with an RJ45 port, a USB-C port that carries Ethernet and power (a Mac or iPad needs no driver for it) and 2.4 GHz
+Wi-Fi of its own. A camera goes on one node's Ethernet, the iPad on another node's USB-C or Wi-Fi, and the mesh
+carries the rest.
 
-Tiles needs nothing from the nodes but a network, and installs nothing on them. With their password in Settings →
-HaLow Nodes it finds them and shows the link it controls cameras through, its signal, rate and retries, in the top bar
-([`docs/halow-monitoring.md`](docs/halow-monitoring.md)). It only reads, and only what stock OpenMANET serves. Before
-a shoot, check the HT-HD01's wired ports with the firmware you run: they have open issues upstream
-([OpenMANET/firmware#50](https://github.com/OpenMANET/firmware/issues/50)).
+Tiles needs nothing from the nodes but a network, and installs nothing on them. With the nodes' admin password in
+Settings → HaLow Nodes, it can also show the link it controls cameras through, its signal, rate and retries, in the
+top bar. It only reads ([`docs/halow-monitoring.md`](docs/halow-monitoring.md) has which nodes and how).
 
 <p align="center">
   <img src="hardware/halow-node-cage/images/front.jpg" width="200" alt="The HaLow node cage from the front">

@@ -445,8 +445,8 @@ rate, a setting it has locked while rolling) is left as it is.
 Settings → **HaLow Nodes** shows the HaLow radio link from within the app. It finds the nodes by itself.
 
 1. Enter the nodes' **Password** (user `root`, the admin login from the node's setup). One login covers every node.
-2. The nodes on the network appear under **Nodes**: OpenMANET nodes answer a password-free check, and any one the app
-   is logged into lists the rest of the mesh. The node this device is on is marked **this device's node**.
+2. The nodes on the network appear under **Nodes**, where their firmware lets the app check them before it sends the
+   password. The node this device is on is marked **this device's node**.
 3. **Add Node Address** is for a node the app can't find by itself.
 4. **Show**: *When a node answers* (default), *Always* (nodes stay listed when they stop answering), or *Off*.
 

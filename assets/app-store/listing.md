@@ -32,8 +32,8 @@ rec,exposure,iso,shutter,white balance,nd,lut,false color,timecode,dit,focus pul
 > own and a text size of your own.
 >
 > MADE FOR LONG LINKS
-> Tiles sends as little as it can, shows each camera's latency and reconnects by itself. On a Wi-Fi HaLow mesh of
-> OpenMANET nodes it shows the link's signal too.
+> Over a Wi-Fi HaLow mesh as much as a cable, Tiles sends as little as it can, shows each camera's latency and
+> reconnects by itself.
 >
 > CAMERAS
 > Checked on: Sony FX3, FX30, FX5, FX6, BURANO and VENICE 2; Blackmagic PYXIS 12K; ARRI ALEXA Mini.

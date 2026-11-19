@@ -2,7 +2,8 @@
 """Screenshots of Tiles' own pages, drawn by dashboard-snapshot with demo cameras shown as real ones.
 
 The App Store's, each under a headline at the sizes App Store Connect takes: assets/app-store/<device>/<n>-<name>.png.
-The README's, the app alone: docs/images/*.jpg.
+The README's, the device's screen as a card on a cool off-white, rounded as the screen is, with a soft shadow:
+docs/images/*.jpg.
 
     python3 scripts/screenshots.py                  # all of them
     python3 scripts/screenshots.py ipad readme      # some: ipad, iphone-6.9, iphone-6.3, mac, readme
@@ -15,7 +16,7 @@ import subprocess
 import sys
 import tempfile
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 PACKAGE = REPO / "Packages/CameraKit"
@@ -84,6 +85,7 @@ README = [
 
 BACKGROUND_TOP, BACKGROUND_BOTTOM = (0, 0, 0), (24, 24, 27)
 HEADLINE, SUBHEAD, EDGE = (255, 255, 255), (152, 152, 159), (58, 58, 62)
+CARD, CARD_SHADOW = (242, 244, 247), (16, 22, 34)
 
 
 def snapshot(binary, device, settings, mode, path):
@@ -119,6 +121,24 @@ def rounded(image, radius):
     mask = Image.new("L", image.size, 0)
     ImageDraw.Draw(mask).rounded_rectangle((0, 0, image.width - 1, image.height - 1), radius=radius, fill=255)
     return mask
+
+
+def card(screen, corner):
+    """The screen on a cool off-white, its corners rounded as the device's are (drawn 4× and scaled down, so they're
+    smooth), lifted off the background by two shadows: a close one where it sits, a wide soft one below."""
+    side = max(screen.size)
+    pad = round(side * 0.06)
+    big = Image.new("L", (screen.width * 4, screen.height * 4), 0)
+    ImageDraw.Draw(big).rounded_rectangle((0, 0, big.width - 1, big.height - 1), radius=corner * 4, fill=255)
+    mask = big.resize(screen.size, Image.LANCZOS)
+    canvas = Image.new("RGB", (screen.width + 2 * pad, screen.height + 2 * pad), CARD)
+    for drop, blur, strength in ((0.003, 0.004, 0.25), (0.018, 0.032, 0.32)):
+        shadow = Image.new("L", canvas.size, 0)
+        shadow.paste(mask, (pad, pad + round(side * drop)))
+        shadow = shadow.filter(ImageFilter.GaussianBlur(side * blur)).point(lambda v: round(v * strength))
+        canvas.paste(CARD_SHADOW, (0, 0, *canvas.size), shadow)
+    canvas.paste(screen, (pad, pad), mask)
+    return canvas
 
 
 def wrap(draw, text, font, width):
@@ -200,8 +220,12 @@ def main():
     with tempfile.TemporaryDirectory() as tmp:
         if "readme" in wanted:
             for file, name, settings, mode, width in README:
-                app = snapshot(binary, DEVICES[name], settings, mode, pathlib.Path(tmp) / f"readme-{file}.png")
-                image = app.resize((width, round(app.height * width / app.width)), Image.LANCZOS)
+                device = DEVICES[name]
+                app = snapshot(binary, device, settings, mode, pathlib.Path(tmp) / f"readme-{file}.png")
+                screen = screen_image(device, app)
+                factor = width / screen.width
+                screen = screen.resize((width, round(screen.height * factor)), Image.LANCZOS)
+                image = card(screen, round(device["corner"] * device["scale"] * factor))
                 path = REPO / "docs/images" / file
                 image.save(path, quality=90, optimize=True)
                 print(f"{path.relative_to(REPO)}  {image.width}×{image.height}  {path.stat().st_size // 1024} KB")
