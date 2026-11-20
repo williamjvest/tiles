@@ -34,6 +34,10 @@ struct DashboardSnapshot {
     @MainActor
     static func main() throws {
         _ = NSApplication.shared
+        // The phone's edit hint shows on the first two edits, counted in the defaults, so whether a snapshot of edit mode
+        // had it depended on how many were drawn before. Off, unless CC_SNAPSHOT_EDIT_HINT=1 asks for it.
+        UserDefaults.standard.set(ProcessInfo.processInfo.environment["CC_SNAPSHOT_EDIT_HINT"] == nil ? 2 : 0,
+                                  forKey: "editHintsShown")
         // CC_SNAPSHOT_STYLE=outline: the look before Ink (ThemeStyle.all has the names).
         if let name = ProcessInfo.processInfo.environment["CC_SNAPSHOT_STYLE"],
            let style = ThemeStyle.all.first(where: { $0.name == name }) {
@@ -287,8 +291,22 @@ struct DashboardSnapshot {
         let rolling = ProcessInfo.processInfo.environment["CC_SNAPSHOT_RECORDING"]?.split(separator: ",").map(String.init) ?? []
         let offline = ProcessInfo.processInfo.environment["CC_SNAPSHOT_OFFLINE"]?.split(separator: ",").map(String.init) ?? []
         var states: [UUID: CameraState] = [:]
+        // A second camera of a family already on the page (two VENICEs, an ALEXA Mini beside an ALEXA 35) gets its own
+        // battery, card and link, as a second body on a set would: the family's demo state is one, so they'd read as
+        // one camera drawn twice.
+        var repeats: [String: Int] = [:]
         for camera in cameras {
-            var state = MockCameraBackend.sampleState(body: camera.demoBody ?? .fx3, label: camera.slot.label)
+            let body = camera.demoBody ?? .fx3
+            var state = MockCameraBackend.sampleState(body: body, label: camera.slot.label)
+            let family = [MockBody.venice, .venice2].contains(body) ? "venice" : body.isArri ? "arri" : body.rawValue
+            let earlier = repeats[family, default: 0]
+            repeats[family] = earlier + 1
+            if earlier > 0 {
+                state.batteryPercent = state.batteryPercent.map { max(9, $0 - 21 * earlier) }
+                state.batteryVolts = state.batteryVolts.map { $0 - 0.6 * Double(earlier) }
+                state.mediaRemainingMinutes = state.mediaRemainingMinutes.map { $0 + 27 * earlier }
+                state.latencyMilliseconds = state.latencyMilliseconds.map { $0 + 5 * earlier }
+            }
             if rolling.contains(camera.slot.label) {
                 state.recording = RecordingControl(state: .recording)
                 state.takeStartedAt = Date().addingTimeInterval(-94)

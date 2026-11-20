@@ -6,7 +6,9 @@
 	<true/>
 	<key>com.apple.security.network.client</key>
 	<true/>
-	<!-- Control API server: NWListener needs network.server on macOS. -->
+	<!-- network.server: the sandbox refuses a listener without it, and three things listen: the RTMP receiver for
+	     Blackmagic and FX5 live view, the SSH tunnel's listener on 127.0.0.1 (Sony Access Authentication) and the
+	     Control API. -->
 	<key>com.apple.security.network.server</key>
 	<true/>
 	<!-- Sony cameras on a USB-C cable (PTP over USB, IOUSBHost). -->

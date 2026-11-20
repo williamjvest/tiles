@@ -20,7 +20,7 @@ rec,exposure,iso,shutter,white balance,nd,lut,false color,timecode,dit,focus pul
 > EVERY CAMERA ON ONE PAGE
 > • Exposure: ISO or EI with the camera's base, shutter angle or speed, white balance presets with Kelvin and tint,
 > iris and ND.
-> • REC you can trust: a tile shows the camera rolling only once the camera says it is. Link REC, shutter, frame rate
+> • REC: a tile shows the camera rolling only once the camera says it is. Link REC, shutter, frame rate
 > and white balance across cameras.
 > • Monitoring: which LUT and whether it's on, false color, zebra, focus assist, frame guides and clean feed, output
 > by output where the camera has outputs.

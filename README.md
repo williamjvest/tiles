@@ -59,7 +59,7 @@ offers, and how each was checked, is in `docs/` (one file per camera family).
 
 - **Exposure:** ISO or EI with the camera's base, shutter angle or speed, white balance presets with Kelvin and tint,
   iris and ND.
-- **REC you can trust:** a tile only says recording once the camera does.
+- **REC:** a tile only says recording once the camera does.
 - **Monitoring:** LUT on and off and which LUT, false color, zebra, focus assist, frame guides and clean feed; on a
   Blackmagic camera, output by output. LUT import on Sony cameras.
 - **Playback** with the same Live | Review switch on every camera.

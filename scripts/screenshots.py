@@ -33,13 +33,15 @@ DEVICES = {
 }
 
 # name, headline, line under it, snapshot settings (CC_SNAPSHOT_<key>), mode (window or edit).
+# Cameras side by side have the same layout: bodies of one family, or a VENICE beside ALEXAs, whose blocks and columns
+# line up. A BURANO or an FX6 beside either leaves rows that don't match.
 IPAD = [
     ("cameras", "Every camera on one page",
      "Exposure, REC, LUTs and playback for each camera on set, side by side.",
-     dict(BODIES="venice2,alexa35,burano"), "window"),
-    ("rec", "REC you can trust",
-     "A tile says it's rolling only once the camera does, and REC can link across cameras.",
-     dict(BODIES="venice2,fx6", RECORDING="A,B"), "window"),
+     dict(BODIES="venice2,alexa35,alexaMini"), "window"),
+    ("rec", "Rolling when the camera is",
+     "Tiles shows rolling once the camera confirms it, and linked cameras roll together.",
+     dict(BODIES="fx6,fx6", RECORDING="A,B"), "window"),
     ("layout", "Laid out your way",
      "Drag, resize and add tiles. Portrait and landscape keep their own layouts.",
      dict(BODIES="venice2"), "edit"),
@@ -48,14 +50,14 @@ IPAD = [
      dict(PYXIS="1"), "window"),
     ("links", "Made for long links",
      "Latency on every page, the Wi-Fi HaLow link's signal, and cameras that reconnect on their own.",
-     dict(BODIES="burano,fx6", HALOW="1", ADD="haLow"), "window"),
+     dict(BODIES="venice2,venice2", HALOW="1"), "window"),   # the VENICE block has HaLow under latency
 ]
 IPHONE = [
     ("camera", "The whole camera in one hand",
      "ISO, shutter, white balance, ND, LUT and REC, sized for a thumb.",
      dict(BODIES="fx3"), "window"),
-    ("rec", "REC you can trust",
-     "Rolling only once the camera says so.",
+    ("rec", "Rolling when the camera is",
+     "Tiles shows rolling once the camera confirms it, not when you tap.",
      dict(BODIES="fx6", RECORDING="A"), "window"),
     ("layout", "Laid out your way",
      "Drag, resize and add tiles, for each camera.",
@@ -64,10 +66,10 @@ IPHONE = [
 MAC = [
     ("cameras", "Every camera on one page",
      "Exposure, REC, LUTs and playback for each camera, in a window beside your monitor.",
-     dict(BODIES="venice2,alexa35,burano"), "window"),
-    ("rec", "REC you can trust",
-     "A tile says it's rolling only once the camera does, and REC can link across cameras.",
-     dict(BODIES="burano,fx6,fx3", RECORDING="A,B,C"), "window"),
+     dict(BODIES="venice2,alexa35,alexaMini"), "window"),
+    ("rec", "Rolling when the camera is",
+     "Tiles shows rolling once the camera confirms it, and linked cameras roll together.",
+     dict(BODIES="fx6,fx6,fx6", RECORDING="A,B,C"), "window"),
     ("layout", "Laid out your way",
      "Drag, resize and add tiles. Every page keeps its own layout.",
      dict(BODIES="venice2"), "edit"),
@@ -76,7 +78,7 @@ SHOTS = {"ipad": IPAD, "iphone-6.9": IPHONE, "iphone-6.3": IPHONE, "mac": MAC}
 
 # The README's: file, device, snapshot settings, mode, width in pixels.
 README = [
-    ("ipad-two-cameras.jpg", "ipad", dict(BODIES="venice2,fx6"), "window", 1800),
+    ("ipad-two-cameras.jpg", "ipad", dict(BODIES="venice2,venice2"), "window", 1800),
     ("iphone-fx3.jpg", "iphone-6.3", dict(BODIES="fx3"), "window", 598),
     ("iphone-two-cameras.jpg", "iphone-6.3", dict(BODIES="fx3,fx6"), "window", 598),
     ("ipad-pyxis.jpg", "ipad", dict(PYXIS="1"), "window", 1800),
