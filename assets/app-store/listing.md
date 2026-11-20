@@ -9,8 +9,9 @@ The text for the App Store's page, kept beside its screenshots. App Store Connec
 **Promotional text** [170]: Exposure, REC, LUTs and playback for every camera on set, on pages you lay out yourself. Over
 the network, a USB-C cable, Bluetooth or a Wi-Fi HaLow mesh.
 
-**Keywords** [100 bytes; no maker's names, nothing already in the name or subtitle]:
-rec,exposure,iso,shutter,white balance,nd,lut,false color,timecode,dit,focus puller,multicam,halow
+**Keywords** [100 bytes; the camera models people search for, not the makers' names; nothing already in the name or
+subtitle]:
+fx3,fx30,fx6,fx2,fx5,burano,venice,alexa,pyxis,ursa,lut,timecode,dit,multicam,false color,halow,cine
 
 **Description** [4000]:
 
