@@ -20,8 +20,8 @@ frame rate and white balance linked across them. It's built for the links a set 
 busy Wi-Fi network as much as a cable: small requests, a latency readout on every page, and cameras that reconnect by
 themselves.
 
-Tiles is made by [Toldwell](https://toldwell.com) and is in beta. Support, terms and privacy:
-[tiles.toldwell.com](https://tiles.toldwell.com).
+Tiles is made by [Toldwell](https://toldwell.com) and is on the [App Store](https://apps.apple.com/app/id6836401315)
+for iPhone, iPad and Mac. Support, terms and privacy: [tiles.toldwell.com](https://tiles.toldwell.com).
 
 ## On set
 
