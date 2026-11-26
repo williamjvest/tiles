@@ -257,6 +257,21 @@ export function buildPresets(state: TwccState): {
 			steps: [{ down: [{ actionId: 'push_autofocus', options: { camera: camId } }], up: [] }],
 		})
 
+		// Grab Still, as the Grab Still tile: lights briefly green when the last still was saved
+		addPreset(`cam_${camId}_grab_still`, {
+			type: 'simple',
+			name: 'Grab Still',
+			style: { text: 'GRAB\nSTILL', size: '14', color: combineRgb(255, 255, 255), bgcolor: combineRgb(20, 40, 60) },
+			feedbacks: [
+				{
+					feedbackId: 'grab_still_saved',
+					options: { camera: camId },
+					style: { bgcolor: combineRgb(0, 160, 80), color: combineRgb(255, 255, 255) },
+				},
+			],
+			steps: [{ down: [{ actionId: 'grab_still', options: { camera: camId } }], up: [] }],
+		})
+
 		// Assignable buttons 1–10
 		for (let btn = 1; btn <= 10; btn++) {
 			addPreset(`cam_${camId}_asgn_${btn}`, {

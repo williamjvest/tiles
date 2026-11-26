@@ -33,6 +33,7 @@ Buttons store the camera's UUID, not its label. The dropdown shows `C · FX3` bu
 | Zoom — Stop | Stop zoom motor. |
 | Assignable Button — Press | Press an assignable body button (1–10). Rejected if the button's function is not supported by Tiles. |
 | Autofocus — Push | Push autofocus, as the app's Autofocus tile: a Blackmagic camera's one-shot, an FX5's Push AF. Rejected while the camera's focus is on AF, or on a camera with no push. Switch AF / MF with the Focus Mode field. |
+| Grab Still | Write a still to the camera's own card, as the app's Grab Still tile (Blackmagic cameras). Rejected on cameras without still capture over the network. |
 
 Every camera action has a camera dropdown showing `Label · Model`.
 
@@ -52,6 +53,7 @@ Pair **Drive** on a button's **Pressed** (down) action with **Stop** on its **Re
 | **Field Equals Value** | Confirmed field value matches string |
 | **Field Writable** | Field present and `writable=true` |
 | **Radio Bars Below** | `radio.bars < threshold` |
+| **Camera — Last Still Saved** | `lastStill.saved=true` — the last Grab Still saved to the card |
 
 ## Variables
 

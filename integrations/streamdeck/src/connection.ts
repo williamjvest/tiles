@@ -35,6 +35,8 @@ export interface LiveCamera {
   connection: Camera["connection"];
   fields: Camera["fields"];
   playback?: PlaybackStatus;
+  canGrabStill?: boolean;
+  lastStill?: { saved: boolean; message?: string };
 }
 
 export const cameras = new Map<string, LiveCamera>(); // keyed by camera UUID
@@ -254,6 +256,13 @@ function handleMessage(msg: ServerMessage): void {
       if ("playback" in msg.update) {
         cam.playback = msg.update.playback ?? undefined;
       }
+      if ("canGrabStill" in msg.update) {
+        cam.canGrabStill = msg.update.canGrabStill ?? undefined;
+      }
+      if ("lastStill" in msg.update) {
+        const ls = msg.update.lastStill;
+        cam.lastStill = ls == null ? undefined : ls;
+      }
       notifyAll();
       break;
     }
@@ -290,6 +299,8 @@ function applySnapshot(cams: Camera[], pgs?: Page[]): void {
       connection: cam.connection,
       fields: cam.fields,
       playback: cam.playback,
+      canGrabStill: cam.canGrabStill,
+      lastStill: cam.lastStill,
     });
   }
   if (pgs) {

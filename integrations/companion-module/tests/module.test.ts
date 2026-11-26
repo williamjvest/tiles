@@ -954,6 +954,17 @@ describe('Autofocus action', () => {
 	})
 })
 
+describe('Grab Still action', () => {
+	it('sends press still for the chosen camera', () => {
+		const sent: Sent[] = []
+		const actions = buildActions(createState(), (msg) => { sent.push(msg as Sent) }, new LensDrives())
+		const action = actions['grab_still']
+		if (!action || !('callback' in action)) throw new Error('grab_still not found')
+		void action.callback({ options: { camera: 'uuid-A' }, id: '1', controlId: 'x', actionId: 'grab_still' } as never, undefined as never)
+		expect(sent.map((m) => m.command)).toEqual([{ press: 'still' }])
+	})
+})
+
 describe('Assignable button action', () => {
 	it('presses the button by its number, 1 to 10', () => {
 		const sent: Sent[] = []
@@ -1043,5 +1054,44 @@ describe('REC preset names include camera label', () => {
 		const recPreset = presets['cam_uuid-a_rec'] as { name: string } | undefined
 		expect(recPreset).toBeDefined()
 		expect(recPreset!.name).toContain('A')
+	})
+})
+
+describe('Grab Still feedback', () => {
+	it('grab_still_saved false when no lastStill', () => {
+		const state = createState()
+		applySnapshot(state, [makeDemoCamera('uuid-A', 'A')], [makeDemoPage('p1', 'A', ['uuid-A'])])
+		const fb = buildFeedbacks(state)['grab_still_saved']
+		if (!fb || fb.type !== 'boolean') throw new Error('grab_still_saved not found')
+		expect(fb.callback({ options: { camera: 'uuid-A' }, id: '1', controlId: 'x', type: 'boolean', previousOptions: null, feedbackId: 'grab_still_saved' }, undefined as never)).toBe(false)
+	})
+
+	it('grab_still_saved true when lastStill.saved = true', () => {
+		const state = createState()
+		const cam = makeDemoCamera('uuid-A', 'A')
+		cam.lastStill = { saved: true }
+		applySnapshot(state, [cam], [makeDemoPage('p1', 'A', ['uuid-A'])])
+		const fb = buildFeedbacks(state)['grab_still_saved']
+		if (!fb || fb.type !== 'boolean') throw new Error('grab_still_saved not found')
+		expect(fb.callback({ options: { camera: 'uuid-A' }, id: '1', controlId: 'x', type: 'boolean', previousOptions: null, feedbackId: 'grab_still_saved' }, undefined as never)).toBe(true)
+	})
+
+	it('grab_still_saved false when lastStill.saved = false', () => {
+		const state = createState()
+		const cam = makeDemoCamera('uuid-A', 'A')
+		cam.lastStill = { saved: false, message: 'No media' }
+		applySnapshot(state, [cam], [makeDemoPage('p1', 'A', ['uuid-A'])])
+		const fb = buildFeedbacks(state)['grab_still_saved']
+		if (!fb || fb.type !== 'boolean') throw new Error('grab_still_saved not found')
+		expect(fb.callback({ options: { camera: 'uuid-A' }, id: '1', controlId: 'x', type: 'boolean', previousOptions: null, feedbackId: 'grab_still_saved' }, undefined as never)).toBe(false)
+	})
+
+	it('grab_still preset exists for each camera', () => {
+		const state = createState()
+		applySnapshot(state, [makeDemoCamera('uuid-a', 'A')], [makeDemoPage('p1', 'A', ['uuid-a'])])
+		const { presets } = buildPresets(state)
+		const preset = presets['cam_uuid-a_grab_still'] as { name: string } | undefined
+		expect(preset).toBeDefined()
+		expect(preset!.name).toBe('Grab Still')
 	})
 })

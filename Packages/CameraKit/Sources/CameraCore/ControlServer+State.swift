@@ -10,6 +10,8 @@ struct CameraAPISnapshot: Equatable {
     var mediaMinutes: Int?
     var fields: [String: APIFieldAny]
     var playback: APIPlayback?
+    var canGrabStill: Bool?
+    var lastStill: APILastStill?
 
     @MainActor
     init(from cam: CameraController) {
@@ -19,6 +21,8 @@ struct CameraAPISnapshot: Equatable {
         self.mediaMinutes = cam.state.mediaRemainingMinutes
         self.fields = APIFieldAny.fields(from: cam.state)
         self.playback = APIPlayback(cam.state)
+        self.canGrabStill = cam.state.canGrabStill ? true : nil
+        self.lastStill = APILastStill(cam.state.lastStill)
     }
 
     /// Returns only the changed properties as a `CameraChangesUpdate`.
@@ -33,6 +37,9 @@ struct CameraAPISnapshot: Equatable {
             u.fields = fieldDiff(old: [:])
             u.playbackChanged = playback != nil
             u.playback = playback
+            u.canGrabStill = .some(canGrabStill)
+            u.lastStillChanged = true
+            u.lastStill = lastStill
             return u
         }
         if connection != old.connection { u.connection = connection }
@@ -45,6 +52,11 @@ struct CameraAPISnapshot: Equatable {
         if playback != old.playback {
             u.playbackChanged = true
             u.playback = playback
+        }
+        if canGrabStill != old.canGrabStill { u.canGrabStill = .some(canGrabStill) }
+        if lastStill != old.lastStill {
+            u.lastStillChanged = true
+            u.lastStill = lastStill
         }
         return u
     }

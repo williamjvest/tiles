@@ -862,6 +862,64 @@ struct ControlServerTests {
         #expect(none.sent.isEmpty && none.body.contains("no push autofocus"))
     }
 
+    /// Grab Still over the API: sent on a camera that has still capture, rejected on one that doesn't, and the
+    /// result (`canGrabStill`, `lastStill`) appears in the camera's snapshot/changes.
+    @Test("press still: sent when canGrabStill, rejected otherwise; canGrabStill and lastStill in snapshot", .timeLimit(.minutes(1)))
+    func pressStill() async throws {
+        func send(_ adjust: (inout CameraState) -> Void) async throws -> (sent: [CameraCommand], body: String) {
+            var state = CameraState()
+            state.connection = .connected
+            state.recording = RecordingControl(state: .idle)
+            adjust(&state)
+            let backend = MonitoringBackend(state: state)
+            let camera = SavedCamera(slot: CameraSlot(label: "B", color: .blue, host: "bmd"),
+                                     connection: .blackmagic(BlackmagicConnection(host: "bmd")))
+            let store = await DashboardStore(cameras: [camera], pages: [CameraPage(name: "All", showsAllCameras: true)],
+                                             startCameras: true, makeBackend: { _, _ in backend })
+            for _ in 0..<500 {
+                if await MainActor.run(body: { store.cameras.first?.state.connection == .connected }) { break }
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            let s = try await makeServer(store: store)
+            defer { Task { @MainActor in s.server.stop() } }
+            let (status, body) = try await httpRequest(method: "POST", path: "/command", token: s.tokenStore.token(),
+                                                       body: #"{"target":{"all":true},"command":{"press":"still"}}"#,
+                                                       port: s.httpPort)
+            #expect(status == 200)
+            try await Task.sleep(for: .milliseconds(100))
+            return (await backend.sent, body)
+        }
+
+        let canDo = try await send { $0.canGrabStill = true }
+        #expect(canDo.sent == [.grabStill] && canDo.body.contains("accepted"))
+
+        let cannotDo = try await send { $0.canGrabStill = false }
+        #expect(cannotDo.sent.isEmpty && cannotDo.body.contains("no still capture"))
+
+        // canGrabStill and lastStill appear in the snapshot
+        var state = CameraState()
+        state.connection = .connected
+        state.recording = RecordingControl(state: .idle)
+        state.canGrabStill = true
+        state.lastStill = StillGrab(saved: true)
+        let backend = MonitoringBackend(state: state)
+        let camera = SavedCamera(slot: CameraSlot(label: "C", color: .green, host: "bmd2"),
+                                 connection: .blackmagic(BlackmagicConnection(host: "bmd2")))
+        let store = await DashboardStore(cameras: [camera], pages: [CameraPage(name: "All", showsAllCameras: true)],
+                                         startCameras: true, makeBackend: { _, _ in backend })
+        for _ in 0..<500 {
+            if await MainActor.run(body: { store.cameras.first?.state.connection == .connected }) { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        let s = try await makeServer(store: store)
+        defer { Task { @MainActor in s.server.stop() } }
+        let (_, snapBody) = try await httpRequest(method: "GET", path: "/state", token: s.tokenStore.token(),
+                                                   body: nil, port: s.httpPort)
+        #expect(snapBody.contains("\"canGrabStill\":true"), "canGrabStill absent from state")
+        #expect(snapBody.contains("\"lastStill\""), "lastStill absent from state")
+        #expect(snapBody.contains("\"saved\":true"), "lastStill.saved absent from state")
+    }
+
     /// Every field the API has.
     static let allFieldNames: Set<String> = [
         "record", "iso", "baseISO", "shutterAngle", "shutterSpeed", "shutterMode",

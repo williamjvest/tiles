@@ -59,6 +59,9 @@ public enum WidgetKind: String, Codable, CaseIterable, Sendable {
     case autoFocus
     /// A still frame to the camera's card (a Blackmagic camera's still capture). Add Tile only.
     case grabStill
+    /// One button that starts or stops recording on every camera on the page. Shows each camera's own recording state
+    /// inside it (letter + dot, one per camera). Add Tile only; offered on pages with 2+ cameras.
+    case recordAll
     /// The camera's audio: a Blackmagic camera's channels (input and gain, a tap for the rest), a VENICE's meters. Add
     /// Tile only.
     case audio
@@ -130,6 +133,7 @@ public enum WidgetKind: String, Codable, CaseIterable, Sendable {
         case .cameraMenu: "Camera Menu"
         case .autoFocus: "Autofocus"
         case .grabStill: "Grab Still"
+        case .recordAll: "Record All"
         case .audio: "Audio"
         case .userFrameA: "User Frame A"
         case .userFrameB: "User Frame B"
@@ -268,6 +272,8 @@ public enum WidgetKind: String, Codable, CaseIterable, Sendable {
         // autoFocus: a one-shot button, its label alone; userFrameA/B: caption + a short value picker
         case .autoFocus:    TileSpec(min: (1,1), def: (1,2))
         case .grabStill:    TileSpec(min: (1,1), def: (1,2))
+        // recordAll: a REC tile with a row of camera markers under it, two columns so the markers read.
+        case .recordAll:    TileSpec(min: (1,3), def: (2,4))
         case .userFrameA, .userFrameB: TileSpec(min: (1,1), def: (1,2))
         // audio: a line per channel (input and gain, or a meter) under its caption
         case .audio:        TileSpec(min: (1,2), def: (2,2))
@@ -1163,6 +1169,8 @@ extension CameraState {
         case .cameraMenu: !cameraButtons.isEmpty
         case .autoFocus: canAutoFocus
         case .grabStill: canGrabStill
+        // Always offered at the state level; tileKinds filters it to pages with 2+ cameras.
+        case .recordAll: true
         case .audio: !audioChannels.isEmpty || audioMeterCount > 0
         case .userFrameA: userFrameLinesA != nil
         case .userFrameB: userFrameLinesB != nil

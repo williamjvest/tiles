@@ -134,6 +134,10 @@ export interface Camera {
 	fields: Partial<Record<FieldName, AnyField>>
 	playback?: PlaybackState | null
 	locked?: boolean
+	/** True when the camera supports `{"press":"still"}` while connected. Absent = no still capture. */
+	canGrabStill?: boolean
+	/** Result of the last Grab Still. `saved: true` = on card; `false` = not saved, `message` says why. */
+	lastStill?: { saved: boolean; message?: string } | null
 }
 
 export interface HaLowNode {
@@ -205,6 +209,7 @@ export type Command =
 	| { drive: DriveMotor; speed: number; seconds?: number }
 	| { press: 'assignable'; button: number }
 	| { press: 'autofocus' }
+	| { press: 'still' }
 
 export interface CommandMessage {
 	type: 'command'

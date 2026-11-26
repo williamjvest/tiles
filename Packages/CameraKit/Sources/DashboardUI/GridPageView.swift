@@ -77,6 +77,7 @@ public struct WidgetView: View {
         case .wbSliders: WhiteBalanceSlidersTile(camera: camera)
         case .iris: IrisFaderTile(camera: camera)
         case .record: RecordTile(camera: camera)
+        case .recordAll: RecordAllTile(camera: camera, store: store)
         case .status: StatusTile(camera: camera, tally: tally)
         case .battery: BatteryTile(camera: camera, tally: tally)
         case .media: MediaTile(camera: camera, tally: tally)

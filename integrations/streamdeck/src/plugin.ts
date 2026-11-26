@@ -1133,6 +1133,77 @@ class AutofocusAction extends SingletonAction<ActionSettings> {
   }
 }
 
+// ─── Grab Still ───────────────────────────────────────────────────────────────
+
+// Grab Still: a still frame written to the camera's own card. The app rejects it on a camera with no still capture
+// (`canGrabStill` absent/false). Key briefly shows "Saved" (ok) or "Failed" (alert) from `lastStill`, and shows an
+// alert immediately if the camera can't do it.
+@action({ UUID: "com.toldwell.twcc.grab-still" })
+class GrabStillAction extends SingletonAction<ActionSettings> {
+  private _settings = new Map<string, ActionSettings>();
+  private _unsubs   = new Map<string, () => void>();
+  private _lastSeen = new Map<string, typeof undefined | { saved: boolean; message?: string }>();
+
+  override async onWillAppear(ev: WillAppearEvent<ActionSettings>): Promise<void> {
+    if (!ev.action.isKey()) return;
+    const keyAction = ev.action;
+    this._settings.set(keyAction.id, ev.payload.settings);
+    const unsub = onConnectionChange(() => {
+      const s = this._settings.get(keyAction.id);
+      if (s) void this._refresh(keyAction, s);
+    });
+    this._unsubs.set(keyAction.id, unsub);
+    await this._refresh(keyAction, ev.payload.settings);
+  }
+
+  override async onWillDisappear(ev: WillDisappearEvent<ActionSettings>): Promise<void> {
+    this._unsubs.get(ev.action.id)?.();
+    this._unsubs.delete(ev.action.id);
+    this._settings.delete(ev.action.id);
+    this._lastSeen.delete(ev.action.id);
+  }
+
+  override async onKeyDown(ev: KeyDownEvent<ActionSettings>): Promise<void> {
+    if (!connected) { await ev.action.showAlert(); return; }
+    const cam = resolveFromSettings(ev.payload.settings);
+    if (!cam || cam.connection !== "connected" || !cam.canGrabStill) {
+      await ev.action.showAlert();
+      return;
+    }
+    sendCameraCommand(ev.payload.settings, { press: "still" });
+  }
+
+  override onDidReceiveSettings(ev: DidReceiveSettingsEvent<ActionSettings>): void {
+    if (!ev.action.isKey()) return;
+    const keyAction = ev.action;
+    this._settings.set(keyAction.id, ev.payload.settings);
+    void this._refresh(keyAction, ev.payload.settings);
+  }
+
+  private async _refresh(a: KeyAction<ActionSettings>, s: ActionSettings): Promise<void> {
+    const cam = resolveFromSettings(s);
+    const canStill = cam?.connection === "connected" && cam.canGrabStill;
+    // Show result feedback when lastStill changed
+    const newResult = cam?.lastStill;
+    const prevResult = this._lastSeen.get(a.id);
+    if (newResult !== prevResult) {
+      this._lastSeen.set(a.id, newResult);
+      if (newResult !== undefined) {
+        if (newResult.saved) {
+          await a.setTitle("Grab\nStill\nSaved");
+          setTimeout(() => { void a.setTitle(canStill ? "Grab\nStill" : "Grab\nStill\n—"); }, 2000);
+        } else {
+          await a.showAlert();
+          await a.setTitle("Grab\nStill\n—");
+          setTimeout(() => { void a.setTitle("Grab\nStill"); }, 2000);
+        }
+        return;
+      }
+    }
+    await a.setTitle(canStill ? "Grab\nStill" : "Grab\nStill\n—");
+  }
+}
+
 // ─── Registration ─────────────────────────────────────────────────────────────
 
 streamDeck.actions.registerAction(new RecAction());
@@ -1175,6 +1246,7 @@ streamDeck.actions.registerAction(new FocusAction());
 streamDeck.actions.registerAction(new ZoomAction());
 streamDeck.actions.registerAction(new AssignableAction());
 streamDeck.actions.registerAction(new AutofocusAction());
+streamDeck.actions.registerAction(new GrabStillAction());
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
 

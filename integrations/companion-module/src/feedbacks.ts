@@ -213,5 +213,21 @@ export function buildFeedbacks(state: TwccState): CompanionFeedbackDefinitions {
 				return state.locked
 			},
 		},
+
+		grab_still_saved: {
+			type: 'boolean',
+			name: 'Camera — Last Still Saved',
+			description: 'Active when the last Grab Still was saved to the card.',
+			defaultStyle: { bgcolor: combineRgb(0, 160, 80), color: combineRgb(255, 255, 255) },
+			options: [
+				{ type: 'dropdown', id: 'camera', label: 'Camera', default: CURRENT_PAGE_ID, choices: cameraChoices(state) },
+			],
+			callback: (feedback: CompanionFeedbackBooleanEvent): boolean => {
+				return forCamera(asText(feedback.options.camera), (id) => {
+					const cam = state.cameras.get(id)
+					return cam?.lastStill?.saved === true
+				})
+			},
+		},
 	}
 }

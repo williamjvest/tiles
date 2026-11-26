@@ -154,6 +154,12 @@ the camera will take in its current mode: change the codec and the frame rates o
   button doesn't take another tap.
 - If the camera refuses (no card, card full) or never confirms, the badge reads **REC FAILED**.
 
+**Record All** — one REC button for every camera on the page (Add Tile → Recording; shown only when the page has 2+
+cameras). A tap starts all idle cameras, or stops all rolling ones — whichever state any camera is in decides the
+action. Each camera follows its own normal REC path: the tile never claims rolling until every camera confirms.
+Inside the button, a small dot per camera (letter + ring) shows each camera's state: green ring = idle, red ring =
+rolling, gray = not yet reported.
+
 **ISO / EI** — tap the number or the chevron to open a picker. Base ISO selector appears below when
 the camera reports it. Tapping the current base ISO (e.g. 800 or 12800) returns the EI to that native
 base — tap it even if EI already reads that value, and it will snap to native.

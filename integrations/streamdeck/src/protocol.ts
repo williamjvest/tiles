@@ -50,6 +50,10 @@ export interface Camera {
   fields: Record<string, AnyField>
   playback?: PlaybackStatus
   locked?: boolean
+  /** True when the camera supports `{"press":"still"}` while connected. Absent = no still capture. */
+  canGrabStill?: boolean
+  /** Result of the last Grab Still. `saved: true` = on card; `false` = not saved, `message` says why. */
+  lastStill?: { saved: boolean; message?: string }
 }
 
 export interface Page {
@@ -83,6 +87,7 @@ export type Command =
   | { drive: 'focus' | 'zoom'; speed: number; seconds?: number }
   | { press: 'assignable'; button: number }
   | { press: 'autofocus' }
+  | { press: 'still' }
 
 export type PlaybackCommand =
   | { playback: 'togglePlay' | 'play' | 'pause' | 'stop' | 'next' | 'previous' | 'fastForward' | 'rewind' | 'scanForward' | 'scanBackward' | 'endScan' | 'recReview' | 'review' | 'live' }
@@ -111,7 +116,7 @@ export interface ResultEntry {
 export type ServerMessage =
   | { type: 'hello'; id?: string; api: number; app: string; appVersion: string; cameras: Camera[]; pages: Page[]; radio?: RadioStatus; locked?: boolean }
   | { type: 'snapshot'; cameras: Camera[]; pages: Page[]; radio?: RadioStatus; locked?: boolean }
-  | { type: 'changes'; camera: string; cameraID: string; update: { connection?: Camera['connection']; latencyMs?: number; fields?: Record<string, Partial<AnyField>>; playback?: PlaybackStatus | null }; removed?: string[] }
+  | { type: 'changes'; camera: string; cameraID: string; update: { connection?: Camera['connection']; latencyMs?: number; fields?: Record<string, Partial<AnyField>>; playback?: PlaybackStatus | null; canGrabStill?: boolean | null; lastStill?: Camera['lastStill'] | null }; removed?: string[] }
   | { type: 'pages'; pages: Page[] }
   | { type: 'cameras'; cameras: Camera[] }
   | { type: 'radio'; radio: RadioStatus }

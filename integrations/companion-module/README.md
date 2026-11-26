@@ -61,6 +61,8 @@ The spec requires clients store UUIDs: a label can be renamed, and a key saved a
 | Set Link Group | `{type:"app", action:"setLink", pageID, group, enabled}` |
 | Playback — Transport Command | `{playback: cmd}` or `{playback: "skip", by: N}` — togglePlay, play, pause, stop, next, previous, fastForward, rewind, scanForward, scanBackward, endScan, skip, recReview, review, live |
 | App — Lock / Unlock Controls | `{type:"app", action:"setLocked", enabled}` — lock, unlock, or toggle from last known state |
+| Autofocus — Push | `{press: "autofocus"}` — Blackmagic one-shot or FX5 Push AF; app rejects if focus is on AF or no push AF |
+| Grab Still | `{press: "still"}` — still to camera's card; app rejects on cameras with no still capture (`canGrabStill` absent) |
 
 ## Feedbacks
 
@@ -77,6 +79,7 @@ The spec requires clients store UUIDs: a label can be renamed, and a key saved a
 | Playback — Playing | `playing` field is `true` |
 | Playback — In Review | `playbackMode` field is `"review"` |
 | App — Controls Locked | App has locked controls via `setLocked` / Lock tile |
+| Camera — Last Still Saved | `lastStill.saved` is `true` (last Grab Still saved to card) |
 
 ## Variables
 

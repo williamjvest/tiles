@@ -523,6 +523,18 @@ export function buildActions(
 			},
 		},
 
+		// Grab Still: a still frame written to the camera's own card (Blackmagic cameras). The app rejects it on a
+		// camera with no still capture (`canGrabStill` absent/false).
+		grab_still: {
+			name: 'Grab Still',
+			options: [
+				{ type: 'dropdown', id: 'camera', label: 'Camera', default: CURRENT_PAGE_ID, choices: cameraChoices(state) },
+			],
+			callback: (action: CompanionActionEvent) => {
+				send({ type: 'command', target: buildTarget(asText(action.options.camera)), command: { press: 'still' } })
+			},
+		},
+
 		press_assignable: {
 			name: 'Assignable Button — Press',
 			options: [

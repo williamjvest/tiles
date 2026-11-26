@@ -143,7 +143,11 @@ the Autofocus tile's push: a Blackmagic camera's one-shot, an FX5's Push AF, hel
 is manual: with `focusMode` on AF it's `rejected` ("autofocus is on"), as on a camera with no push. All three answer
 `accepted`. `{"press": "still"}` is the Grab Still tile: a still to the camera's own card, on a camera that takes one
 over the network (a Blackmagic camera); `rejected` ("no still capture on this camera") elsewhere. `accepted` says it
-was sent; whether the camera saved it shows in the camera's state.
+was sent; whether the camera saved it shows in the camera's state as `canGrabStill` and `lastStill`.
+
+`canGrabStill` is `true` on a camera that supports still capture while connected; absent when it doesn't. `lastStill`
+is `{"saved": true}` when the camera saved the still, or `{"saved": false, "message": "…"}` with the camera's own
+reason when it didn't. Both appear beside `fields` in `hello`, `snapshot`, `cameras` and `changes`.
 
 A camera that plays back also has `playback` beside `fields` (see Playback, below): the clip, where it is, and the
 transport commands the camera takes now.

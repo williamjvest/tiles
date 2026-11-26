@@ -52,6 +52,8 @@ export function applyChanges(
 
 	// playback: whole object replacement per spec (or null when it goes away)
 	if ('playback' in update) cam.playback = update.playback
+	if ('canGrabStill' in update) cam.canGrabStill = update.canGrabStill
+	if ('lastStill' in update) cam.lastStill = update.lastStill
 
 	if (update.fields) {
 		for (const [fname, patch] of Object.entries(update.fields)) {

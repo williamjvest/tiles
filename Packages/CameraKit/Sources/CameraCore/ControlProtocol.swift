@@ -274,6 +274,10 @@ public struct APICameraFull: Codable, Sendable {
     public var fields: [String: APIFieldAny]
     /// The camera's clip and transport, on a camera that plays back (docs/control-api.md, Playback).
     public var playback: APIPlayback?
+    /// The camera supports `{"press":"still"}` while connected.
+    public var canGrabStill: Bool?
+    /// The result of the last Grab Still: saved to the card, or why not.
+    public var lastStill: APILastStill?
 
     @MainActor
     public init(from cam: CameraController) {
@@ -288,6 +292,22 @@ public struct APICameraFull: Codable, Sendable {
         self.mediaMinutes = cam.state.mediaRemainingMinutes
         self.fields = APIFieldAny.fields(from: cam.state)
         self.playback = APIPlayback(cam.state)
+        self.canGrabStill = cam.state.canGrabStill ? true : nil
+        self.lastStill = APILastStill(cam.state.lastStill)
+    }
+}
+
+/// The result of the last Grab Still request.
+public struct APILastStill: Codable, Sendable, Equatable {
+    /// `true` = saved to card; `false` = not saved.
+    public var saved: Bool
+    /// Why the still wasn't saved, in the camera's own words.
+    public var message: String?
+
+    public init?(_ grab: StillGrab?) {
+        guard let grab else { return nil }
+        self.saved = grab.saved
+        self.message = grab.message
     }
 }
 
@@ -441,6 +461,9 @@ public struct CameraChangesUpdate: Sendable {
     /// The playback changed: `playback` goes out whole, or as `null` when the camera no longer has it.
     public var playbackChanged = false
     public var playback: APIPlayback?
+    public var canGrabStill: Bool??    // outer Optional = "did it change"; inner = new value (nil when it went false)
+    public var lastStillChanged = false
+    public var lastStill: APILastStill?
 
     public init(connection: String? = nil, latencyMs: Int? = nil, battery: Int? = nil,
                 mediaMinutes: Int? = nil, fields: [String: FieldFragment]? = nil) {
@@ -451,12 +474,13 @@ public struct CameraChangesUpdate: Sendable {
     public var isEmpty: Bool {
         connection == nil && latencyMs == nil && battery == nil && mediaMinutes == nil
             && (fields == nil || fields!.isEmpty) && !playbackChanged
+            && canGrabStill == nil && !lastStillChanged
     }
 }
 
 extension CameraChangesUpdate: Codable {
     enum CodingKeys: String, CodingKey {
-        case connection, latencyMs, battery, mediaMinutes, fields, playback
+        case connection, latencyMs, battery, mediaMinutes, fields, playback, canGrabStill, lastStill
     }
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -468,6 +492,14 @@ extension CameraChangesUpdate: Codable {
         if playbackChanged {
             if let playback { try c.encode(playback, forKey: .playback) } else { try c.encodeNil(forKey: .playback) }
         }
+        if let outer = canGrabStill {
+            if let inner = outer { try c.encode(inner, forKey: .canGrabStill) }
+            else { try c.encodeNil(forKey: .canGrabStill) }
+        }
+        if lastStillChanged {
+            if let lastStill { try c.encode(lastStill, forKey: .lastStill) }
+            else { try c.encodeNil(forKey: .lastStill) }
+        }
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -478,6 +510,11 @@ extension CameraChangesUpdate: Codable {
         fields = try c.decodeIfPresent([String: FieldFragment].self, forKey: .fields)
         playbackChanged = c.contains(.playback)
         playback = try c.decodeIfPresent(APIPlayback.self, forKey: .playback)
+        if c.contains(.canGrabStill) {
+            canGrabStill = try c.decodeIfPresent(Bool.self, forKey: .canGrabStill)
+        }
+        lastStillChanged = c.contains(.lastStill)
+        lastStill = try c.decodeIfPresent(APILastStill.self, forKey: .lastStill)
     }
 }
 

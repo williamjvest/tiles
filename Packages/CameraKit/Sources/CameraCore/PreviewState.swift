@@ -158,6 +158,8 @@ extension DashboardStore {
         let preview = previewController(for: camera)
         return WidgetKind.allCases.filter {
             $0 != .look && $0 != .format && ($0 != .haLow || !haLowNodes.isEmpty)
+                // Record All needs 2+ cameras on the current page to do anything.
+                && ($0 != .recordAll || visibleCameras.count > 1)
                 && (camera.offers($0) || preview?.state.offers($0) == true)
         }
     }

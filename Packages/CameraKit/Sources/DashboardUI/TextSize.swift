@@ -55,7 +55,7 @@ enum TextZoom {
         let (w, h) = (size.width, size.height)
         let spec = kind.spec
         switch kind {
-        case .timecode, .label, .status, .battery, .media, .latency, .clipName, .record, .shutterDial, .liveView, .playback, .haLow, .webGUI:
+        case .timecode, .label, .status, .battery, .media, .latency, .clipName, .record, .recordAll, .shutterDial, .liveView, .playback, .haLow, .webGUI:
             return nil
         case .wbSliders:
             let form = WhiteBalanceSlidersTile.form(for: size, showsTint: true)

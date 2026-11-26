@@ -5,7 +5,7 @@
   "name": "Tiles — Camera Control",
   "shortname": "Tiles",
   "description": "Controls cinema cameras through the Control API of Tiles on iPhone, iPad or Mac.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "license": "MIT",
   "maintainers": [
     {

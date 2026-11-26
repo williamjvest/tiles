@@ -1183,7 +1183,7 @@ enum TileGroup: CaseIterable {
         case .iso, .shutterDial, .shutterValue, .frameRate, .wbPreset, .wbSliders, .iris, .ndPreset, .ndMinus, .ndPlus,
              .ndMode, .ecs, .shootingMode, .dynamicRange, .colorGamut:
             self = .exposure
-        case .record, .codec, .bitrate, .resolution, .format, .desqueeze, .clipName, .playback, .clips, .proxy,
+        case .record, .recordAll, .codec, .bitrate, .resolution, .format, .desqueeze, .clipName, .playback, .clips, .proxy,
              .recordedLUT, .imagerMode, .audio, .grabStill:
             self = .recording
         case .lut, .look, .viewAssist, .falseColor, .zebra, .focusAssist, .frameGuides, .cleanFeed, .statusText,

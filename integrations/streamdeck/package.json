@@ -1,6 +1,6 @@
 {
   "name": "com.toldwell.twcc",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Stream Deck plugin for Tiles: Camera Control",
   "scripts": {
     "build": "rollup -c --bundleConfigAsCjs",

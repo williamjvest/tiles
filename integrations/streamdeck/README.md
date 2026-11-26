@@ -71,6 +71,8 @@ The plugin is then active. Re-run `npm run build` (or `npm run watch`) after cha
 | **Any Control** | Send any field command. Inspector: pick any field from the full API list and an operation (set / step / toggle / cycle). Title shows the field's live value; lit when a bool field is true. Alerts if the camera lacks the field. |
 | **Playback** | Send a transport command. Inspector: choose command (togglePlay, play, pause, stop, next, previous, fastForward, rewind, recReview, review, live, Live/Review, skip ± seconds). Alerts unless the camera takes that command now (its `playback.commands`; Live/Review needs a writable `playbackMode`, so not while recording). Live/Review cycles `playbackMode` and lights in review; play/pause/togglePlay keys light while playing. The title says which command (PREV, FF, +5s…). |
 | **Lock** | Lock or unlock the app's controls (as the app's padlock tile does). Lit while locked. API commands still work while locked. |
+| **Autofocus** | Push autofocus — a Blackmagic camera's one-shot or an FX5's Push AF. Alerts if camera is offline or has no push AF. |
+| **Grab Still** | Write a still to the camera's own card (Blackmagic cameras). Key title shows "Saved" briefly on success or "—" on failure. Alerts immediately if the camera has no still capture (`canGrabStill`). |
 | **TC / Duration** | Toggle the VENICE timecode display between timecode and take duration. Lit while showing duration. Alerts on cameras without `timecodeDuration`. |
 | **Show Page** | Switch the app's active page. Set the Page ID in the inspector. |
 | **Link Toggle** | Toggle the link group on a page. Set the Page ID in the inspector. |

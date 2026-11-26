@@ -601,12 +601,30 @@ def icon_autofocus(d, sz):
     r = sz * 0.08
     d.ellipse([sz / 2 - r, sz / 2 - r, sz / 2 + r, sz / 2 + r], fill=WHITE)
 
+def icon_grab_still(d, sz):
+    # Camera body outline with a shutter aperture circle
+    m = sz * 0.12
+    lw = max(1, int(sz * 0.1))
+    # Camera body rectangle
+    bx, by = m, sz * 0.3
+    bw, bh = sz - 2 * m, sz * 0.55
+    d.rounded_rectangle([bx, by, bx + bw, by + bh], radius=lw, outline=WHITE, width=lw)
+    # Lens circle
+    cx, cy = sz / 2, by + bh / 2
+    r = sz * 0.17
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=WHITE, width=lw)
+    # Viewfinder bump on top
+    vw, vh = sz * 0.3, sz * 0.18
+    vx = cx - vw / 2
+    d.rectangle([vx, by - vh, vx + vw, by], outline=WHITE, width=lw)
+
 make_action_icon("icon-focus",      icon_focus)
 make_action_icon("icon-zoom",       icon_zoom)
 make_action_icon("icon-assignable", icon_assignable)
 make_action_icon("icon-autofocus",  icon_autofocus)
+make_action_icon("icon-grab-still", icon_grab_still)
 
-for name, lines in [("focus", ["FOCUS"]), ("zoom", ["ZOOM"]), ("assignable", ["ASGN"]), ("autofocus", ["PUSH", "AF"])]:
+for name, lines in [("focus", ["FOCUS"]), ("zoom", ["ZOOM"]), ("assignable", ["ASGN"]), ("autofocus", ["PUSH", "AF"]), ("grab-still", ["GRAB", "STILL"])]:
     make_key_icon(f"key-{name}", key_label(lines, False))
 
 print("Done.")

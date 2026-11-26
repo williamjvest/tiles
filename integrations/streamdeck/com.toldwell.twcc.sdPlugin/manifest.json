@@ -1,7 +1,7 @@
 {
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
   "Name": "Tiles",
-  "Version": "2.4.0.0",
+  "Version": "2.5.0.0",
   "SDKVersion": 2,
   "Author": "Toldwell",
   "Description": "Control Sony cinema cameras through Tiles on your local network.",
@@ -717,6 +717,20 @@
       "States": [
         {
           "Image": "imgs/key-autofocus"
+        }
+      ]
+    },
+    {
+      "Name": "Grab Still",
+      "UUID": "com.toldwell.twcc.grab-still",
+      "Icon": "imgs/icon-grab-still",
+      "Tooltip": "Grab a still frame to the camera's own card (Blackmagic cameras). Key shows Saved or failure. Disabled when the camera has no still capture.",
+      "Controllers": [
+        "Keypad"
+      ],
+      "States": [
+        {
+          "Image": "imgs/key-grab-still"
         }
       ]
     }
