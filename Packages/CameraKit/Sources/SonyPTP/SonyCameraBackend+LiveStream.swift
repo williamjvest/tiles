@@ -34,6 +34,7 @@ extension SonyCameraBackend {
             throw LiveViewError.streamRefused("streaming is off on the camera: MENU → Network → Stream → Setting → On")
         default: break
         }
+        if let blocker = Self.streamBlocker(state) { throw LiveViewError.streamRefused(blocker) }
         guard let address = await RTMPLiveStream.localAddress(toward: host) else { throw LiveViewError.unavailable }
         let stream = liveStream ?? RTMPLiveStream()
         liveStream = stream
@@ -168,6 +169,23 @@ extension SonyCameraBackend {
     }
 
     static let streamKey = "tiles"
+
+    /// What stops an FX5 streaming, in what the camera reports (Sony's FX5 help guide, Streaming: not with S&Q on, X-OCN,
+    /// a 119.88 or 100 project rate, or 4096×2160; Simul Rec and Interval Rec too, which aren't read). Said before
+    /// anything is set, rather than a stream that never comes. nil: nothing known in the way.
+    static func streamBlocker(_ state: CameraState) -> String? {
+        if state.frameRate?.variable?.value == true { return "the camera can't stream with S&Q on: turn S&Q off" }
+        if let codec = state.fileFormat?.value, codec.uppercased().contains("X-OCN") {
+            return "the camera can't stream while recording X-OCN: pick an XAVC codec"
+        }
+        if let project = (state.frameRate?.project.value).flatMap(Double.init), project > 99 {
+            return "the camera can't stream at a \(state.frameRate?.project.value ?? "") project rate"
+        }
+        if state.resolution?.value.hasPrefix("4096") == true {
+            return "the camera can't stream in 4096×2160: pick 3840×2160 or smaller"
+        }
+        return nil
+    }
 
     // MARK: - The session's side
 

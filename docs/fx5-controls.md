@@ -98,6 +98,32 @@ was read back, then put back. The camera was left as found: Custom, ISO 5000 on 
 | Live view | `0xD0AC`–`0xD2C0`, `0x9241`/`0x9242`, `0xD307` | — | built, off in the app, never on the camera | No Live View Status (`0xD221`) or LiveViewURL at all, as on the FX6: no picture over Camera Remote. Through its stream instead: below. |
 | File transfer | menu only | — | — | Network → File Transfer → Server Settings 1–3: FTP or FTPES servers for uploading clips (Sony's guide, `transfer_prep.html`). None of the codes named so far; possibly among the unnamed ones, as the VENICE has its own. |
 
+**Monitor & Control's picture: the SDK's Monitoring, not the FX3's call (2026-11-26, from the dumps).** Sony's
+developer kit (not the PTP reference Tiles is built on) has a Monitoring API for cinema bodies:
+SetMonitoringDeliverySetting gives the camera the host's address, ports (video 55001, meta 55005 by default, or any
+49152–65535), a quality level 1–5 (Level 1 640×360 7.5p 2 Mbps; Level 2 640×360 30p 8 Mbps; Level 3 1024×576 30p 24
+Mbps) and UDP or TCP. ControlMonitoring starts and stops it, and the camera then *sends* JPEGs to the host.
+"Vender protocol". The SDK's properties for it (MonitoringSettingVersion, display-only; MonitoringDeliveringStatus
+0xFFFF none; MonitoringIsDelivering; MonitoringAvailableFormat and MonitoringFormatSupportInformation, UINT64s) match
+a block of codes the PTP reference doesn't name, which the FX5, FX6 and BURANO list and the FX3 doesn't:
+`0xE098` UINT16 0xFFFF (delivering status), `0xE099` UINT32 0, `0xE09A` UINT8 0x13, `0xE09B` and `0xE09C` strings of
+random bytes (a key and a nonce?, which would mean the picture is encrypted), `0xE09D` UINT32 101 display-only (setting
+version 1.01), `0xE09F` UINT8 0 (is delivering), `0xE0A1` UINT16 0 (transport?), `0xE0A2`/`0xE0A3` UINT64 0 (formats).
+A match by type and value, not confirmed. The two operations aren't in the PTP reference either. All four bodies
+offer the same ~16 operations it leaves unnamed (920C–920E, 9213, 9214, 9219, 921C, 921E, 9224–9226, 922B, 922C,
+9230, 9232, 9234), so the device info doesn't say which; the FX5 alone adds 924C. **Next session with the camera:**
+`scripts/sony-recorder.py` between Monitor & Control and the FX5, the app's monitoring screen open 20 s, and on the
+device running the app `sudo tcpdump -i any -w mc-video.pcap udp portrange 49152-65535 or tcp portrange
+49152-65535`. That gives the operations, their datasets, and whether the JPEGs arrive in the clear. Sony's kit names
+these fields but numbers them its own way, not as the camera does.
+
+**The FX3's call, untried (2026-11-26).** No Live View Status on its list was taken to mean no picture over the
+session, but GetObject(0xFFFFC002) was never sent to it. It may be that Monitor & Control gets the FX3's kind of picture
+from it. First thing with the camera on the network: `camctl liveview-probe <host> fx5.jpg` (GetObjectInfo, then
+GetObject five times; prints each answer). A JPEG means the FX3 path works and the app can use it. 0x2009 means it
+isn't offered. Against it: Sony's guide says Monitor & Control shows no picture while the FX5 streams, and the FX5 sits
+with the FX6 and BURANO in Monitor & Control's own tables, not the FX3.
+
 **Live view through its stream** (2026-11-15, from the reference and Sony's help guide, never on the camera; off in the
 app, `SonyBackendConfig.streamLiveView`; on by default for camctl). The FX5
 streams RTMP/RTMPS and SRT (Network → Stream: Setting On/Off, Destination Select, RTMP/RTMPS 1–3 and SRT-Caller 1–3,

@@ -70,7 +70,7 @@ enum TextZoom {
         case .liveViewButton:
             return [h >= 40]
         case .colorBars, .falseColor, .look, .sensorFlip, .hdmiInfo, .gridLines, .viewAssist, .zebra, .focusAssist,
-             .frameGuides, .cleanFeed, .statusText, .monitoring, .cameraMenu, .call, .lock, .autoFocus:
+             .frameGuides, .cleanFeed, .statusText, .monitoring, .cameraMenu, .call, .lock, .autoFocus, .grabStill:
             // One-button tiles: a shorter label below 34 pt.
             return [h < 34]
         default:

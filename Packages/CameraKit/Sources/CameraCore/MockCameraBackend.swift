@@ -276,6 +276,12 @@ public actor MockCameraBackend: CameraBackend, LUTImportCapable, LiveViewProvide
             state.assignableButtons[i].isOn = state.assignableButtons[i].isOn.map { !$0 }
             emit()
         case .pressCameraButton, .autoFocus: break  // the demo has no menu to work, nor a lens to focus
+        case .grabStill:
+            // The demo PYXIS "saves" one, a moment later, as a camera would.
+            guard state.canGrabStill else { return }
+            try? await Task.sleep(for: .milliseconds(300))
+            state.lastStill = StillGrab(saved: true)
+            emit()
         case .setAudio(let channel, let setting): await setAudio(channel, setting)
         case .setUserFrameLines(let set, let value):
             if set == .a {

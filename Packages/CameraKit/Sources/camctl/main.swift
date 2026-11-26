@@ -103,6 +103,9 @@ case "liveview":
     let frameCount = lvArgs.first.flatMap { Int($0) } ?? 10
     let savePath = lvArgs.dropFirst().first
     runLiveView(host: host, frameCount: frameCount, savePath: savePath, recorder: recorder)
+case "liveview-probe":
+    guard let host = args.first else { printUsage(); exit(1) }
+    runLiveViewProbe(host: host, savePath: args.dropFirst().first, recorder: recorder)
 case "halow":
     runHaLow(addresses: Array(args))
 case "bm":
@@ -737,6 +740,34 @@ func runLUTImport(host: String, cubePath: String, slot: Int, displayName: String
     waitServicingMain(sema)
 }
 
+/// The FX3's live view call on a camera that doesn't list Live View Status (an FX5, FX6, BURANO): does it answer anyway?
+func runLiveViewProbe(host: String, savePath: String?, recorder: (any TrafficRecorder)?) {
+    let sema = DispatchSemaphore(value: 0)
+    Task {
+        let backend = makeSonyBackend(host: host, recorder: recorder)
+        print("Connecting to \(host)...")
+        await backend.connect()
+        for await state in backend.updates {
+            if case .failed(let msg) = state.connection { fputs("\(msg)\n", stderr); sema.signal(); return }
+            guard state.connection == .connected, state.hasReported else { continue }
+            print("model \(state.model ?? "?"), Live View Status (0xD221) Enabled: \(state.hasLiveView)")
+            let (info, frames, jpeg) = await backend.probeGetObjectLiveView()
+            let hex = { (c: UInt16) in String(format: "0x%04X", c) }
+            print("GetObjectInfo(0xFFFFC002): \(info.map(hex) ?? "no answer")")
+            print("GetObject(0xFFFFC002): \(frames.map(hex).joined(separator: ", "))")
+            if let jpeg {
+                print("PICTURE: \(jpeg.count) B JPEG. The FX3 path works on this camera.")
+                if let savePath { try? jpeg.write(to: URL(fileURLWithPath: savePath)); print("Saved: \(savePath)") }
+            } else {
+                print("No picture: 0x2009 means the call isn't offered, 0x200F not ready, 0x2019 busy.")
+            }
+            await backend.disconnect()
+            sema.signal(); return
+        }
+    }
+    waitServicingMain(sema)
+}
+
 /// Live view check via GetObject(0xFFFFC002).
 /// Sets D26A=Low, GetObjectInfo once, fetches `frameCount` frames, restores D26A, optionally saves the last frame.
 func runLiveView(host: String, frameCount: Int, savePath: String?, recorder: (any TrafficRecorder)?) {
@@ -1296,6 +1327,7 @@ func printUsage() {
       camctl [--record <file>] lut import <host> <file.cube> --slot N [--name "Display Name"]
                                                                        Import a .cube file into a User slot
       camctl [--record <file>] liveview <host> [frames] [save.jpg]     Fetch live view frames, report bandwidth
+      camctl [--record <file>] liveview-probe <host> [save.jpg]        Try the FX3's live view call on any Sony
       camctl [--record <file>] keys     <host> <dir> <step>...         Steps through the app's backend, one connection
                                         steps: btn:playback|enter|left|right, btn!:... (in Record mode too),
                                                dial:0x4001:<n>, wait:<s>, modewait:<s>,
@@ -1320,7 +1352,7 @@ func printUsage() {
       camctl arri --from <capture dir> [--dump]                        or what Tiles reads from a capture of one
                                                                        (iso, angle, speed, kelvin, tint, iris, nd, ndvar,
                                                                        fps, res, format, setting, lut, falsecolor, bars,
-                                                                       focus, wb); rec start|stop; play <cmd>
+                                                                       focus, wb); rec start|stop; af; still; play <cmd>
 
     <prop>: hex code (0xD00E) or name fragment (shutterangle, iso, kelvin, tint, nd, framerate)
     --record <file>: capture raw PTP-IP traffic to a newline-delimited JSON file

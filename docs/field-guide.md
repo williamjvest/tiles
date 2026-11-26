@@ -54,6 +54,9 @@ FX3's:
 **An FX5's live view comes through its stream:** it has no picture over Camera Remote, so Tiles sets one of its
 RTMP destinations to itself ("Tiles") and starts the stream while live view is open. Turn streaming on once: MENU →
 Network → Stream → **Setting → On**. It records as it streams. About 1.5 Mbps at Low, as a PYXIS's live view.
+Sony's guide says: the picture can take tens of seconds to arrive; the recording settings can't change while it streams;
+Monitor & Control shows no picture meanwhile; and it won't stream with S&Q on, X-OCN, a 119.88 or 100 project rate,
+4096×2160, Simul Rec or Interval Rec (Tiles names the first four instead of waiting).
 
 **If Camera Remote Control is grayed out**, the camera's USB is set to remote control, and the camera takes one
 remote at a time. Set MENU → Technical → USB → **USB Cnct Mode (PORT1)** (and PORT2) to **Off**, and the network's
@@ -593,6 +596,10 @@ camera keeps with the card. Changing the camera letter starts a new reel on the 
 
 **Off-speed:** with Variable on in the FPS tile (Var where it's small), the tile shows the off-speed rate and the project rate after it
 ("60 → 24"); tap the number to pick another rate.
+
+**Grab Still:** add the **Grab Still** tile (Add Tile → Recording). A tap writes a still to the camera's card, as
+its own still button does, and the tile says Saved or the camera's reason. A camera that answers it has none loses the
+tile.
 
 **Live view:** add the **Live View** tile. The camera's API has no picture, so live view comes through its livestream,
 with Tiles as the server it streams to: about 3.5 s to start, then the camera's own frame rate at about 1.6 Mbps

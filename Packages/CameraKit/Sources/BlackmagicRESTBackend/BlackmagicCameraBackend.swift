@@ -79,6 +79,8 @@ public actor BlackmagicCameraBackend: CameraBackend {
     private var presetLayout: [String]?
     /// The camera's software (/system/product): presets are only touched on one whose fields were checked.
     private var softwareVersion: String?
+    /// The camera answered a still with 404 (or 501): no Grab Still tile on it again this run.
+    private var noStillCapture = false
     /// Monitoring changes the camera has pushed since connecting (a value that changed, not one pushed again): one during
     /// a change through a preset means the monitoring section it copied may be out of date.
     private var monitoringPushes = 0
@@ -486,6 +488,8 @@ public actor BlackmagicCameraBackend: CameraBackend {
 
         var built = BlackmagicRESTStateMapper.buildInitialState(from: payload)
         applyMonitoring(to: &built)
+        // Offered until the camera says it has none: the API has no way to ask first.
+        built.canGrabStill = !noStillCapture
         timecodeUndecided = false
         if let first = firstTimecode, let second = secondTimecode {
             built.timecode = clock(second, earlier: first, readAt: secondTimecodeAt)
@@ -1153,6 +1157,9 @@ public actor BlackmagicCameraBackend: CameraBackend {
         case .autoFocus:
             try await restClient.put("lens/focus/doAutoFocus", body: AutoFocusBody())
 
+        case .grabStill:
+            await grabStill()
+
         case .setAudio(let channel, let setting):
             try await setAudio(channel, setting)
 
@@ -1162,6 +1169,33 @@ public actor BlackmagicCameraBackend: CameraBackend {
              .setSubjectRecognition, .setFocusArea, .setAFTransitionSpeed, .setAFSubjectShift, .setAFAssist:
             break  // a BURANO's, a VENICE's, an FX6's or an FX5's: the Blackmagic REST API has none of them
         }
+    }
+
+    // MARK: - Still
+
+    /// A still to the card: POST transports/0/doStillCapture (the REST API from camera 10.1: 204 started, 404 no still
+    /// capture on this device, 500 failed with the reason). What came is `lastStill`; a 404 or 501 takes the tile away.
+    /// A PYXIS on 10.2 is said to answer this with an error while its own still button works.
+    func grabStill() async {
+        do {
+            try await restClient.post("transports/0/doStillCapture")
+            state.lastStill = StillGrab(saved: true)
+            ActivityLog.shared.note(host, "still: saved to the card")
+        } catch BlackmagicError.http(404, _), BlackmagicError.notImplemented {
+            noStillCapture = true
+            state.canGrabStill = false
+            state.lastStill = StillGrab(saved: false, message: "This camera takes no still over the network")
+            ActivityLog.shared.note(host, "still: none on this camera (404)")
+        } catch {
+            let reason: String
+            switch error {
+            case BlackmagicError.http(_, let text), BlackmagicError.forbidden(let text): reason = text
+            default: reason = (error as? LocalizedError)?.errorDescription ?? "\(error)"
+            }
+            state.lastStill = StillGrab(saved: false, message: reason.isEmpty ? "The camera didn't save it" : reason)
+            ActivityLog.shared.note(host, "still: not saved: \(reason)")
+        }
+        emit()
     }
 
     // MARK: - Playback commands (REST API)

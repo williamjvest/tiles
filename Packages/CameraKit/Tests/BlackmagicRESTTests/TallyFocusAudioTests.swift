@@ -96,6 +96,33 @@ struct TallyFocusAudioTests {
         #expect((position?["y"] as? NSNumber)?.doubleValue == 0.5)
     }
 
+    @Test("Grab Still: saved; a failure says the camera's reason; a camera without it loses the tile", .timeLimit(.minutes(1)))
+    func grabStill() async throws {
+        for status in [204, 500, 404] {
+            var config = FakeBlackmagicCamera.Config()
+            config.stillCaptureStatus = status
+            let (cam, backend, task) = try await start(config)
+            defer { task.cancel(); cam.stop() }
+            let state = await collectUntil(backend: backend) { $0.connection == .connected }
+            #expect(state?.offers(.grabStill) == true, "offered until the camera says it has none")
+            await backend.send(.grabStill)
+            let after = await collectUntil(backend: backend) { $0.lastStill != nil }
+            #expect(cam.stillCaptures == 1)
+            switch status {
+            case 204:
+                #expect(after?.lastStill?.saved == true)
+            case 500:
+                #expect(after?.lastStill?.saved == false)
+                #expect(after?.lastStill?.message == "No media to save the still to")
+                #expect(after?.canGrabStill == true)
+            default:
+                #expect(after?.lastStill?.saved == false)
+                #expect(after?.canGrabStill == false)
+                #expect(after?.offers(.grabStill) == false)
+            }
+        }
+    }
+
     @Test("Autofocus isn't offered with a manual lens", .timeLimit(.minutes(1)))
     func noAutoFocusOnAManualLens() async throws {
         var config = FakeBlackmagicCamera.Config()

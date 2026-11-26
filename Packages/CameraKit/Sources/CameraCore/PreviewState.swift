@@ -31,6 +31,7 @@ extension MockCameraBackend {
                                                     "BRAW 12:1", "BRAW 18:1"])
         s.resolution = Choice("9K 16:9", options: ["12K 17:9", "9K 16:9", "4K 16:9"])
         s.dynamicRange = Choice("Film", options: ["Film", "Extended Video", "Video"])
+        s.canGrabStill = true
         s.fileNaming = FileNaming(cameraID: Choice("A", options: (65...90).map { String(UnicodeScalar(UInt8($0))) }),
                                   reel: Level(1, range: 1...999, step: 1, isWritable: false))
         s.batteryPercent = 100

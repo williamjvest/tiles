@@ -121,6 +121,7 @@ public struct WidgetView: View {
             ChoiceTile(camera: camera, caption: "Color Gamut", choice: camera.state.colorGamut) { .setColorGamut($0) }
         case .cameraMenu: CameraMenuTile(camera: camera)
         case .autoFocus: AutoFocusTile(camera: camera)
+        case .grabStill: GrabStillTile(camera: camera)
         case .audio: AudioTile(camera: camera)
         case .userFrameA: UserFrameTile(camera: camera, set: .a)
         case .userFrameB: UserFrameTile(camera: camera, set: .b)

@@ -1184,7 +1184,7 @@ enum TileGroup: CaseIterable {
              .ndMode, .ecs, .shootingMode, .dynamicRange, .colorGamut:
             self = .exposure
         case .record, .codec, .bitrate, .resolution, .format, .desqueeze, .clipName, .playback, .clips, .proxy,
-             .recordedLUT, .imagerMode, .audio:
+             .recordedLUT, .imagerMode, .audio, .grabStill:
             self = .recording
         case .lut, .look, .viewAssist, .falseColor, .zebra, .focusAssist, .frameGuides, .cleanFeed, .statusText,
              .statusTextContent, .monitoring, .colorBars, .hdmiInfo, .gridLines, .userFrameA, .userFrameB, .liveView,

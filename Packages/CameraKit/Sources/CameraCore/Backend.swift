@@ -73,6 +73,8 @@ public enum CameraCommand: Sendable, Equatable {
     case pressCameraButton(CameraBodyButton)
     /// One-shot autofocus on the middle of the picture (`CameraState.canAutoFocus`).
     case autoFocus
+    /// A still frame written to the camera's card (`CameraState.canGrabStill`); the result in `CameraState.lastStill`.
+    case grabStill
     /// One of `CameraState.audioChannels`, by its `id`.
     case setAudio(channel: Int, AudioSetting)
     /// What one of a VENICE's frame line sets shows of its user frame lines (`UserFrameLines`).

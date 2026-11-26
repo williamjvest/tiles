@@ -287,6 +287,19 @@ public struct WhiteBalanceState: Sendable, Equatable {
     }
 }
 
+/// A still the camera was asked for: saved to its card, or why not, in the camera's words.
+public struct StillGrab: Sendable, Equatable {
+    public var at: Date
+    public var saved: Bool
+    public var message: String?
+
+    public init(at: Date = Date(), saved: Bool, message: String? = nil) {
+        self.at = at
+        self.saved = saved
+        self.message = message
+    }
+}
+
 public struct FrameRateState: Sendable, Equatable {
     /// Recording frame rate as the camera labels it, e.g. "23.98", "24", "59.94".
     public var project: Choice<String>
@@ -645,6 +658,11 @@ public struct CameraState: Sendable, Equatable {
     /// One-shot autofocus: a Blackmagic camera with a lens it can focus (on the middle of the picture), or a Sony pro
     /// body with Push Auto Focus (an FX5: autofocus for a moment while focus is manual).
     public var canAutoFocus = false
+    /// The camera writes a still to its card when asked (`CameraCommand.grabStill`): a Blackmagic camera, through
+    /// its REST API's still capture, until it answers that it has none.
+    public var canGrabStill = false
+    /// What the last Grab Still came to, as the camera answered it.
+    public var lastStill: StillGrab?
     /// The camera is focusing by itself (AF on, or held), as it reports it: on an FX5 what focus is actually doing, so a
     /// lens switched to MF reads manual even with AF / MF on AF.
     public var focusIsAuto = false

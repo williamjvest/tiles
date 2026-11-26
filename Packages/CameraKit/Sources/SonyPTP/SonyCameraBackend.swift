@@ -505,7 +505,7 @@ public actor SonyCameraBackend: CameraBackend, LUTImportCapable {
             await setProp(code: SDIPropCode.afAssist.rawValue, data: Data([on ? 0x02 : 0x01]))
         case .setMonitorOverlay, .setStatusTextContent, .setZebraLevel, .setFrameGuideRatio,
              .setClipCameraPosition, .setTimecodeShowsDuration,
-             .setDynamicRange, .autoFocus, .setAudio, .setUserFrameLines, .setFrameLineSet, .setOutputFollows:
+             .setDynamicRange, .autoFocus, .setAudio, .setUserFrameLines, .setFrameLineSet, .setOutputFollows, .grabStill:
             break  // not in PTP 3 on these bodies (or not offered on them yet)
         case .playback(let cmd):
             await sendPlaybackCommand(cmd)

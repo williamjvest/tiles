@@ -137,8 +137,14 @@ extension ControlServer {
             }
         case .press(let what, let button):
             dispatchAction(field: what, cameras: cameras, reply: reply) { cam in
-                guard what == "assignable" || what == "autofocus" else { return "unknown button kind" }
+                guard ["assignable", "autofocus", "still"].contains(what) else { return "unknown button kind" }
                 guard cam.state.connection.isControllable else { return "camera not connected" }
+                if what == "still" {
+                    // The Grab Still tile: a still to the camera's card. What came of it is in the state, as lastStill.
+                    guard cam.state.canGrabStill else { return "no still capture on this camera" }
+                    cam.sendLocally(.grabStill)
+                    return nil
+                }
                 if what == "autofocus" {
                     // The Autofocus tile's push: only on a camera that has one, and only while focus is manual.
                     guard cam.state.canAutoFocus else { return "no push autofocus on this camera" }

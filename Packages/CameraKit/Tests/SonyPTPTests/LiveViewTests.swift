@@ -266,6 +266,34 @@ struct FakeCameraLiveViewTests {
             Issue.record("Expected .unavailable, got \(error)")
         }
     }
+
+    @Test("The probe tries GetObject without 0xD221 listed, and reports what came", .timeLimit(.minutes(1)))
+    func probeWithoutLiveViewStatus() async throws {
+        for answers in [true, false] {
+            var camConfig = FakePTPIPCamera.Config()
+            camConfig.liveViewEnabled = answers
+            camConfig.omitPropCodes = [SDIPropCode.liveViewStatus.rawValue]  // as an FX5 lists them
+            let cam = FakePTPIPCamera(config: camConfig)
+            try await cam.start()
+            defer { cam.stop() }
+            var cfg = SonyBackendConfig()
+            cfg.transport.connectTimeout = 5
+            cfg.pollInterval = 60
+            let backend = makeBackend(host: "127.0.0.1", port: cam.port, config: cfg)
+            let connectTask = Task.detached { await backend.connect() }
+            defer { connectTask.cancel() }
+            _ = await collectUntil(backend: backend, timeout: 10) { $0.connection == .connected && $0.hasReported }
+            #expect(await backend.liveViewAvailable == false)
+            let (info, frames, jpeg) = await backend.probeGetObjectLiveView(attempts: 2)
+            if answers {
+                #expect(info == PTPResponseCode.ok.rawValue)
+                #expect(jpeg?.starts(with: [0xFF, 0xD8]) == true)
+            } else {
+                #expect(jpeg == nil)
+                #expect(frames.allSatisfy { $0 != PTPResponseCode.ok.rawValue })
+            }
+        }
+    }
 }
 
 // MARK: - StateMapper live view status

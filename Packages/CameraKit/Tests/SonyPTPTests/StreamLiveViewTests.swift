@@ -10,6 +10,24 @@ import CameraKitTestSupport
 
 @Suite("Live view through the camera's stream", .serialized, .rtmpPort)
 struct StreamLiveViewTests {
+    @Test("What stops an FX5 streaming is said before anything is set (Sony's FX5 guide)")
+    func streamBlockers() {
+        var s = CameraState()
+        s.frameRate = FrameRateState(project: Choice("23.98", options: ["23.98"]))
+        s.fileFormat = Choice("XAVC S-I 422", options: ["XAVC S-I 422"])
+        s.resolution = Choice("3840x2160", options: ["3840x2160"])
+        #expect(SonyCameraBackend.streamBlocker(s) == nil)
+        var t = s; t.frameRate?.variable = Choice(true, options: [false, true])
+        #expect(SonyCameraBackend.streamBlocker(t)?.contains("S&Q") == true)
+        t = s; t.fileFormat = Choice("X-OCN LT", options: ["X-OCN LT"])
+        #expect(SonyCameraBackend.streamBlocker(t)?.contains("X-OCN") == true)
+        t = s; t.frameRate = FrameRateState(project: Choice("119.88", options: ["119.88"]))
+        #expect(SonyCameraBackend.streamBlocker(t)?.contains("119.88") == true)
+        t = s; t.resolution = Choice("4096x2160", options: ["4096x2160"])
+        #expect(SonyCameraBackend.streamBlocker(t)?.contains("4096") == true)
+        #expect(SonyCameraBackend.streamBlocker(CameraState()) == nil, "nothing read, nothing claimed")
+    }
+
     @Test("The stream settings dataset reads as the reference lays it out, and goes back unchanged")
     func streamSettingListRoundTrip() throws {
         let list = StreamSettingList(version: 100, streams: [

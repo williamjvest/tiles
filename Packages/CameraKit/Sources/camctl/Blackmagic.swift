@@ -111,6 +111,8 @@ func runBlackmagic(_ arguments: [String]) {
         command = .record(what == "start")
     case "af":
         command = .autoFocus
+    case "still":
+        command = .grabStill
     case "play":
         let commands: [String: PlaybackCommand] = ["review": .review, "live": .live, "toggle": .togglePlay, "stop": .stop,
                                                    "next": .next, "prev": .previous, "ff": .fastForward, "rew": .rewind]

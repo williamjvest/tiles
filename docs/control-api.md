@@ -141,7 +141,9 @@ body (10 is the lens's), only where it's set to a function the app has checked o
 Rec Review), never one set to Last Clip Del.; otherwise `rejected` with what it's set to. `"press": "autofocus"` is
 the Autofocus tile's push: a Blackmagic camera's one-shot, an FX5's Push AF, held a moment and let go. Only while focus
 is manual: with `focusMode` on AF it's `rejected` ("autofocus is on"), as on a camera with no push. All three answer
-`accepted`.
+`accepted`. `{"press": "still"}` is the Grab Still tile: a still to the camera's own card, on a camera that takes one
+over the network (a Blackmagic camera); `rejected` ("no still capture on this camera") elsewhere. `accepted` says it
+was sent; whether the camera saved it shows in the camera's state.
 
 A camera that plays back also has `playback` beside `fields` (see Playback, below): the clip, where it is, and the
 transport commands the camera takes now.

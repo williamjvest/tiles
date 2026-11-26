@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Write Tiles' public pages into a checkout of Toldwell/twcc (GitHub Pages, served at https://tiles.toldwell.com):
+"""Write Tiles' public pages in site/ (GitHub Pages from the public repository, served at https://tiles.toldwell.com):
 the Terms of Use from the app's own text, so the site and the app can't say different things.
 
-    scripts/site-pages.py <twcc checkout>      # writes terms/index.html; commit and push it there
+    scripts/site-pages.py            # writes site/terms/index.html; the site is deployed when it reaches the public main
 
-The support page (index.html) and the privacy policy (privacy/index.html) are written by hand in that repo.
+The support page (site/index.html), the privacy policy (site/privacy/index.html) and the downloads page are written by
+hand. .github/workflows/pages.yml publishes site/ when the public repository's main changes.
 """
 import html
 import pathlib
@@ -43,7 +44,7 @@ page = f"""<!doctype html>
 </body>
 </html>
 """
-out = pathlib.Path(sys.argv[1]) / "terms" / "index.html"
+out = (pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else repo / "site") / "terms" / "index.html"
 out.parent.mkdir(parents=True, exist_ok=True)
 out.write_text(page)
 print(f"wrote {out} (version {version}, {len(paragraphs)} sections)")

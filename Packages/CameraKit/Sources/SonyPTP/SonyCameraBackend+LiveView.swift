@@ -145,6 +145,27 @@ extension SonyCameraBackend {
         liveViewObjectInfoFetched = true
     }
 
+    /// The FX3's live view call, tried whether or not the camera lists Live View Status (0xD221): GetObjectInfo then
+    /// GetObject on 0xFFFFC002, each answer's response code, and the JPEG if one came. For a body that doesn't list
+    /// 0xD221 (an FX5, FX6, BURANO), to see whether it answers the call anyway (`camctl liveview-probe`). Nothing is set.
+    public func probeGetObjectLiveView(attempts: Int = 5) async -> (info: UInt16?, frames: [UInt16], jpeg: Data?) {
+        guard let transport else { return (nil, [], nil) }
+        let info = try? await transport.execute(opCode: PTPOpCode.getObjectInfo.rawValue, params: [liveViewObjectHandle])
+        var codes: [UInt16] = []
+        var jpeg: Data?
+        for _ in 0..<max(attempts, 1) {
+            guard let (resp, data) = try? await transport.execute(opCode: PTPOpCode.getObject.rawValue,
+                                                                  params: [liveViewObjectHandle]) else { break }
+            codes.append(resp.responseCode)
+            if resp.responseCode == PTPResponseCode.ok.rawValue, let picture = try? Self.jpeg(inLiveViewDataset: data) {
+                jpeg = picture
+                break
+            }
+            try? await Task.sleep(for: .milliseconds(500))
+        }
+        return (info?.0.responseCode, codes, jpeg)
+    }
+
     // MARK: - Live view internals
 
 

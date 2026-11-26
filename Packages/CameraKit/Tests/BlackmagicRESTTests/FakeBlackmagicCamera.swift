@@ -141,6 +141,8 @@ public final class FakeBlackmagicCamera: @unchecked Sendable {
         public var tallyStatus: String = "None"
         /// /lens/focus/description's `controllable`: an electronic lens the camera can focus. Off, doAutoFocus is a 403.
         public var focusControllable: Bool = true
+        /// What POST /transports/0/doStillCapture answers: 204, 404 (no still capture) or 500 (failed, with a reason).
+        public var stillCaptureStatus: Int = 204
         /// The audio channels (AudioControl); nil, a camera without the API's audio, whose paths answer 404.
         public var audioChannels: [AudioChannelState]? = nil
         /// Properties whose subscribe request gets no answer at all, not even a refusal.
@@ -241,6 +243,8 @@ public final class FakeBlackmagicCamera: @unchecked Sendable {
     public private(set) var tallyPuts: [String] = []
     /// Every body PUT to /lens/focus/doAutoFocus.
     @Locked public private(set) var autoFocusPuts: [[String: Any]] = []
+    /// POSTs to /transports/0/doStillCapture.
+    @Locked public private(set) var stillCaptures = 0
     /// Every PUT under /audio, as "0/level".
     public private(set) var audioPuts: [String] = []
     /// The audio channels as the camera has them now.
@@ -797,6 +801,14 @@ public final class FakeBlackmagicCamera: @unchecked Sendable {
         case ("GET", "/lens/focus/description"):
             return json(["controllable": config.focusControllable,
                          "focusDistance": ["adjustable": config.focusControllable, "min": 0.0, "max": 10000.0]])
+
+        case ("POST", "/transports/0/doStillCapture"):
+            stillCaptures += 1
+            switch config.stillCaptureStatus {
+            case 204: return noContent()
+            case 500: return HTTPResponse(status: 500, body: "{\"error\": \"No media to save the still to\"}")
+            default: return HTTPResponse(status: config.stillCaptureStatus, body: "{\"error\": \"Not found\"}")
+            }
 
         case ("PUT", "/lens/focus/doAutoFocus"):
             autoFocusPuts.append(body ?? [:])

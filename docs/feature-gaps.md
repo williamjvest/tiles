@@ -22,6 +22,8 @@ The camera offers it, Tiles doesn't:
     within a few frames: fine for matching and logging, not for sync sound.
 - **Test image per output.** The EVF, Monitor and SDI 2 have their own. The camera's own Color bars, and Tiles', use
   SDI 1's.
+- **Grab Still.** The camera grabs a frame to its SD card (an ALEXA 35: its USB-C stick), and ARRI's own network
+  protocol can fetch a frame grab. The web remote Tiles speaks hasn't shown one yet.
 
 Built, never on a camera:
 
@@ -160,6 +162,9 @@ Built, never on a camera:
 - The AF Settings window: Face/Eye Priority AF on or off, seven focus areas, transition speed, shift
   sensitivity, AF Assist. Its codes were in the 10/09 capture all along.
 
+The camera offers it, Tiles doesn't: **Grab Still.** The FX3 shoots stills, and the camera's remote control has the shutter
+(S1/S2, `0xD2C1`/`0xD2C2`), but in movie mode it takes none; switching it to stills remotely isn't worked out.
+
 ## PYXIS and other Blackmagic cameras (`pyxis-controls.md`, `ursa-cine-controls.md`, `blackmagic-bluetooth.md`)
 
 Nothing is missing on the PYXIS.
@@ -169,6 +174,9 @@ Built, needing a camera to prove:
 - **The Clips window**: the playback list named from `/clips`, a pick seeking to the clip's start.
 - **The iPhone on USB-C**, through Personal Hotspot.
 - **An electronic lens's** iris and one-shot autofocus.
+- **Grab Still**: `POST /transports/0/doStillCapture` (REST API 10.1), a still to the card, and what the camera
+  answered on the tile. Offered on every Blackmagic camera until one answers 404; a PYXIS on 10.2 is reported to
+  refuse it while its own still button works, in which case the tile says the camera's reason.
 - **The URSA Cine** (12K LF, 17K 65, Immersive): built from Blackmagic's REST document, never on one.
 - **Blackmagic over Bluetooth**: built from the published Camera Control protocol, never run against a camera.
 
